@@ -1,3 +1,5 @@
+Here's the corrected src/App.jsx with all style tags and CSS keyframes removed. The fallback is a simple "Loading..." text in white:
+
 ```jsx
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
@@ -34,38 +36,14 @@ const ClientHome = lazy(() => import('./pages/ClientHome'));
 const ClientReports = lazy(() => import('./pages/ClientReports'));
 const ClientChat = lazy(() => import('./pages/ClientChat'));
 
-// Minimal fallback for lazy components
-const PageLoader = () => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100vh',
-    fontFamily: 'Inter, sans-serif',
-    color: '#a855f7'
-  }}>
-    <div style={{ textAlign: 'center' }}>
-      <div style={{
-        width: 40,
-        height: 40,
-        borderRadius: '50%',
-        border: '4px solid transparent',
-        borderTopColor: '#ec4899',
-        borderRightColor: '#a855f7',
-        animation: 'spin 0.8s linear infinite',
-        margin: '0 auto 1rem'
-      }} />
-      <p>Loading...</p>
-    </div>
-    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-  </div>
-);
+// Simple fallback component – no CSS keyframes, no style tags
+const Loader = () => <div style={{ color: 'white' }}>Loading...</div>;
 
 export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <Suspense fallback={<PageLoader />}>
+        <Suspense fallback={<Loader />}>
           <Routes>
             {/* Redirect root to login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
