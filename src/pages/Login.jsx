@@ -1,5 +1,3 @@
-
-```jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Link, useNavigate } from 'react-router-dom';
@@ -28,7 +26,7 @@ const cardStyle = {
   width: '100%',
   color: '#fff',
   boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-  animation: 'fadeInUp 0.7s ease forwards',
+  animation: 'fadeIn 0.7s ease forwards', // global fadeIn
 };
 
 const logoStyle = {
@@ -153,25 +151,8 @@ const spinnerStyle = {
   borderRadius: '50%',
   border: '2px solid rgba(255,255,255,0.3)',
   borderTopColor: '#fff',
-  animation: 'spin 0.7s linear infinite',
+  animation: 'spin 0.7s linear infinite', // global spin
 };
-
-// ---- Keyframes injection ----
-function injectKeyframes() {
-  if (document.getElementById('login-keyframes')) return;
-  const style = document.createElement('style');
-  style.id = 'login-keyframes';
-  style.textContent = `
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
-}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -182,10 +163,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const tooManyAttempts = attempts >= 5;
-
-  useEffect(() => {
-    injectKeyframes();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -335,4 +312,3 @@ export default function Login() {
     </div>
   );
 }
-```
