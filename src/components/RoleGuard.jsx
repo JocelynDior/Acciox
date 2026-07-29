@@ -1,9 +1,8 @@
-```jsx
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// ---- Inline Styles ----
+// ---- Inline Styles (no keyframes, use global animations) ----
 
 const bgGradient = {
   background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #ec4899 100%)',
@@ -49,7 +48,7 @@ const spinnerStyle = {
   border: '4px solid transparent',
   borderTopColor: '#ec4899',
   borderRightColor: '#a855f7',
-  animation: 'spin 1s linear infinite',
+  animation: 'spin 1s linear infinite', // references global spin
 };
 
 const titleText = {
@@ -71,22 +70,8 @@ const btnStyle = {
   boxShadow: '0 4px 15px rgba(168, 85, 247, 0.5)',
 };
 
-// ---- Keyframes for spinner ----
-// Insert a style tag into the head for the animation.
-function insertSpinnerKeyframes() {
-  if (document.getElementById('acciox-spinner-keyframes')) return;
-  const style = document.createElement('style');
-  style.id = 'acciox-spinner-keyframes';
-  style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
-  document.head.appendChild(style);
-}
-
 // ---- Loading Screen Component ----
 function LoadingScreen() {
-  useEffect(() => {
-    insertSpinnerKeyframes();
-  }, []);
-
   return (
     <div style={bgGradient}>
       <div style={glassCard}>
@@ -129,10 +114,6 @@ export function UnauthorizedPage() {
   const { userRole } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    insertSpinnerKeyframes(); // just for safety if needed elsewhere
-  }, []);
-
   const goToDashboard = () => {
     // Route to user's dashboard based on role
     const dashRoutes = {
@@ -160,4 +141,3 @@ export function UnauthorizedPage() {
     </div>
   );
 }
-```
