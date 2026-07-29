@@ -1,4 +1,3 @@
-```jsx
 import React, { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { auth, db, doc, setDoc, serverTimestamp } from '../firebase';
@@ -27,7 +26,7 @@ const cardStyle = {
   width: '100%',
   color: '#fff',
   boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-  animation: 'fadeInUp 0.7s ease forwards',
+  animation: 'fadeIn 0.7s ease forwards', // global fadeIn
 };
 
 const logoStyle = {
@@ -141,7 +140,7 @@ const spinnerStyle = {
   borderRadius: '50%',
   border: '2px solid rgba(255,255,255,0.3)',
   borderTopColor: '#fff',
-  animation: 'spin 0.7s linear infinite',
+  animation: 'spin 0.7s linear infinite', // global spin
 };
 
 const errorTextStyle = {
@@ -149,23 +148,6 @@ const errorTextStyle = {
   fontSize: '0.8rem',
   marginBottom: 12,
 };
-
-// ---- Keyframes injection ----
-function injectKeyframes() {
-  if (document.getElementById('register-keyframes')) return;
-  const style = document.createElement('style');
-  style.id = 'register-keyframes';
-  style.textContent = `
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
-}
 
 // Password validation
 function validatePassword(pwd) {
@@ -189,10 +171,6 @@ export default function Register() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    injectKeyframes();
-  }, []);
 
   const sanitize = (str) => str.trim();
 
@@ -406,4 +384,3 @@ export default function Register() {
     </div>
   );
 }
-```
