@@ -1,4 +1,3 @@
-```jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -27,7 +26,7 @@ const cardStyle = {
   width: '100%',
   color: '#fff',
   boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-  animation: 'fadeInUp 0.7s ease forwards',
+  animation: 'fadeIn 0.7s ease forwards', // global fadeIn
   textAlign: 'center',
 };
 
@@ -41,7 +40,7 @@ const iconContainerStyle = {
   justifyContent: 'center',
   margin: '0 auto 24px',
   fontSize: '2.5rem',
-  animation: 'pulseGlow 2s infinite',
+  animation: 'pulse-glow 2s infinite', // global pulse-glow
 };
 
 const titleStyle = {
@@ -139,24 +138,6 @@ const bottomLinksStyle = {
   flexWrap: 'wrap',
 };
 
-// ---- Keyframes injection ----
-function injectKeyframes() {
-  if (document.getElementById('not-activated-keyframes')) return;
-  const style = document.createElement('style');
-  style.id = 'not-activated-keyframes';
-  style.textContent = `
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 10px #c026d3; }
-      50% { box-shadow: 0 0 25px #c026d3, 0 0 40px #7e22ce; }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 export default function NotActivated() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -168,10 +149,6 @@ export default function NotActivated() {
     fullName: '',
   });
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    injectKeyframes();
-  }, []);
 
   // Fetch user document for company name & registration date
   useEffect(() => {
@@ -292,4 +269,3 @@ export default function NotActivated() {
     </div>
   );
 }
-```
