@@ -1,5 +1,4 @@
-```jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
 import { Link } from 'react-router-dom';
@@ -27,7 +26,7 @@ const cardStyle = {
   width: '100%',
   color: '#fff',
   boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-  animation: 'fadeInUp 0.7s ease forwards',
+  animation: 'fadeIn 0.7s ease forwards', // global fadeIn
   textAlign: 'center',
 };
 
@@ -127,7 +126,7 @@ const spinnerStyle = {
   borderRadius: '50%',
   border: '2px solid rgba(255,255,255,0.3)',
   borderTopColor: '#fff',
-  animation: 'spin 0.7s linear infinite',
+  animation: 'spin 0.7s linear infinite', // global spin
 };
 
 const successCheckStyle = {
@@ -149,23 +148,6 @@ const sentMessageStyle = {
   lineHeight: 1.6,
 };
 
-// ---- Keyframes injection ----
-function injectKeyframes() {
-  if (document.getElementById('forgotpw-keyframes')) return;
-  const style = document.createElement('style');
-  style.id = 'forgotpw-keyframes';
-  style.textContent = `
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
@@ -174,7 +156,6 @@ export default function ForgotPassword() {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    injectKeyframes();
     return () => clearInterval(timerRef.current);
   }, []);
 
@@ -294,4 +275,3 @@ export default function ForgotPassword() {
     </div>
   );
 }
-```
