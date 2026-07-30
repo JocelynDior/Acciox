@@ -63,11 +63,6 @@ const linkActiveStyle = {
   fontWeight: 600,
 };
 
-const linkHoverStyle = {
-  background: 'rgba(255,255,255,0.1)',
-  color: '#ffffff',
-};
-
 const sectionTitleStyle = {
   color: 'rgba(255,255,255,0.4)',
   fontSize: '0.7rem',
@@ -146,15 +141,16 @@ export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
 
   const getCompanyLinks = () => {
     if (!companyId) return [];
+    const base = '/company/' + companyId;
     return [
-      { to: `/company/${companyId}/dashboard`, label: 'Dashboard', icon: <FiHome /> },
-      { to: `/company/${companyId}/transactions`, label: 'Transactions', icon: <FiList /> },
-      { to: `/company/${companyId}/expenses`, label: 'Staff Expenses', icon: <FiUsers /> },
-      { to: `/company/${companyId}/payroll`, label: 'Payroll', icon: <FiDollarSign /> },
-      { to: `/company/${companyId}/reports`, label: 'Reports', icon: <FiPieChart /> },
-      { to: `/company/${companyId}/invoices`, label: 'Invoices', icon: <FiCreditCard /> },
-      { to: `/company/${companyId}/chat/group`, label: 'Group Chat', icon: <FiMessageSquare /> },
-      { to: `/company/${companyId}/chat/ai`, label: 'AI Chat', icon: <FiCpu /> },
+      { to: base + '/dashboard', label: 'Dashboard', icon: <FiHome /> },
+      { to: base + '/transactions', label: 'Transactions', icon: <FiList /> },
+      { to: base + '/expenses', label: 'Staff Expenses', icon: <FiUsers /> },
+      { to: base + '/payroll', label: 'Payroll', icon: <FiDollarSign /> },
+      { to: base + '/reports', label: 'Reports', icon: <FiPieChart /> },
+      { to: base + '/invoices', label: 'Invoices', icon: <FiCreditCard /> },
+      { to: base + '/chat/group', label: 'Group Chat', icon: <FiMessageSquare /> },
+      { to: base + '/chat/ai', label: 'AI Chat', icon: <FiCpu /> },
     ];
   };
 
