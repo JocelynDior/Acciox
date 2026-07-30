@@ -1,74 +1,66 @@
 ```jsx
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
+// All styles as inline objects – no style injection or template literals with @keyframes
+const containerStyle = {
+  background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
+  minHeight: '100vh',
+  padding: '60px 20px',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  fontFamily: "'Inter', system-ui, sans-serif",
+};
+
+const cardStyle = {
+  background: 'rgba(255,255,255,0.08)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255,255,255,0.15)',
+  borderRadius: 20,
+  padding: '40px 30px',
+  maxWidth: 800,
+  width: '100%',
+  color: '#fff',
+  boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+  animation: 'fadeIn 0.8s ease forwards', // global fadeIn
+};
+
+const logoStyle = {
+  background: 'linear-gradient(to right, #c026d3, #e879f9)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
+  fontSize: '2.5rem',
+  fontWeight: 800,
+  marginBottom: 8,
+};
+
+const sectionTitleStyle = {
+  color: '#e879f9',
+  fontSize: '1.4rem',
+  marginTop: 28,
+  marginBottom: 8,
+  fontWeight: 600,
+};
+
+const paragraphStyle = {
+  color: 'rgba(255,255,255,0.8)',
+  lineHeight: 1.7,
+  marginBottom: 16,
+};
+
+const footerStyle = {
+  marginTop: 32,
+  borderTop: '1px solid rgba(255,255,255,0.15)',
+  paddingTop: 16,
+  fontSize: '0.85rem',
+  color: 'rgba(255,255,255,0.5)',
+  textAlign: 'center',
+};
+
 export default function PrivacyPolicy() {
-  useEffect(() => {
-    if (!document.getElementById('acciox-fadein')) {
-      const style = document.createElement('style');
-      style.id = 'acciox-fadein';
-      style.textContent = `@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`;
-      document.head.appendChild(style);
-    }
-  }, []);
-
-  const containerStyle = {
-    background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
-    minHeight: '100vh',
-    padding: '60px 20px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    fontFamily: "'Inter', system-ui, sans-serif",
-  };
-
-  const cardStyle = {
-    background: 'rgba(255,255,255,0.08)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: 20,
-    padding: '40px 30px',
-    maxWidth: 800,
-    width: '100%',
-    color: '#fff',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-    animation: 'fadeIn 0.8s ease forwards',
-  };
-
-  const logoStyle = {
-    background: 'linear-gradient(to right, #c026d3, #e879f9)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    fontSize: '2.5rem',
-    fontWeight: 800,
-    marginBottom: 8,
-  };
-
-  const sectionTitleStyle = {
-    color: '#e879f9',
-    fontSize: '1.4rem',
-    marginTop: 28,
-    marginBottom: 8,
-    fontWeight: 600,
-  };
-
-  const paragraphStyle = {
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: 1.7,
-    marginBottom: 16,
-  };
-
-  const footerStyle = {
-    marginTop: 32,
-    borderTop: '1px solid rgba(255,255,255,0.15)',
-    paddingTop: 16,
-    fontSize: '0.85rem',
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center',
-  };
-
   return (
     <div style={containerStyle}>
       <div style={cardStyle}>
