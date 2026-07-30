@@ -89,23 +89,14 @@ function LoadingScreen() {
 export function RoleGuard({ allowedRoles, children }) {
   const { currentUser, userRole, userStatus, loading } = useAuth();
 
-  // Loading state: show spinner
   if (loading) return <LoadingScreen />;
-
-  // Not authenticated
   if (!currentUser) return <Navigate to="/login" replace />;
-
-  // Client not activated
   if (userRole === 'client' && userStatus === 'unverified') {
     return <Navigate to="/not-activated" replace />;
   }
-
-  // Unauthorised role
   if (allowedRoles && !allowedRoles.includes(userRole)) {
     return <Navigate to="/unauthorized" replace />;
   }
-
-  // All checks passed
   return children;
 }
 
@@ -115,7 +106,6 @@ export function UnauthorizedPage() {
   const navigate = useNavigate();
 
   const goToDashboard = () => {
-    // Route to user's dashboard based on role
     const dashRoutes = {
       admin: '/admin',
       accountant: '/accountant',
