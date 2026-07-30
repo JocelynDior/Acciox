@@ -1,4 +1,3 @@
-```jsx
 import React, { useState, useEffect } from 'react';
 import {
   db, collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp,
@@ -139,7 +138,8 @@ export default function UserManagement() {
   const handleToggleStatus = async (user, newStatus) => {
     try {
       await updateDoc(doc(db, 'users', user.id), { status: newStatus });
-      toast.success(`User ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
+      const msg = 'User ' + (newStatus === 'active' ? 'activated' : 'deactivated');
+      toast.success(msg);
       logAudit(newStatus === 'active' ? 'ACTIVATE_USER' : 'DEACTIVATE_USER', user);
     } catch (err) { toast.error(err.message); }
   };
@@ -304,4 +304,3 @@ export default function UserManagement() {
     </>
   );
 }
-```
