@@ -39,7 +39,6 @@ export default function PrivateChat() {
   const [newMsg, setNewMsg] = useState('');
   const messagesEndRef = useRef(null);
 
-  // Fetch company users
   useEffect(() => {
     if (!companyId) return;
     const q = query(collection(db, 'users'), where('companyId', '==', companyId));
@@ -47,12 +46,11 @@ export default function PrivateChat() {
     return () => unsub();
   }, [companyId]);
 
-  // Listen to private messages when both users selected
   useEffect(() => {
     if (!companyId || !selectedUser) return;
     const ids = [currentUser.uid, selectedUser.id].sort();
     const chatId = ids.join('_');
-    const q = query(collection(db, `chats/${companyId}/private/${chatId}/messages`), orderBy('createdAt', 'asc'));
+    const q = query(collection(db, 'chats/' + companyId + '/private/' + chatId + '/messages'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, snap => setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return () => unsub();
   }, [companyId, selectedUser, currentUser.uid]);
@@ -65,7 +63,8 @@ export default function PrivateChat() {
     if (!newMsg.trim() || !selectedUser) return;
     const ids = [currentUser.uid, selectedUser.id].sort();
     const chatId = ids.join('_');
-    await addDoc(collection(db, `chats/${companyId}/private/${chatId}/messages`), {
+    const path = 'chats/' + companyId + '/private/' + chatId + '/messages';
+    await addDoc(collection(db, path), {
       text: newMsg.trim(),
       senderId: currentUser.uid,
       senderName: currentUser.displayName || currentUser.email,
