@@ -1,4 +1,3 @@
-```jsx
 import React, { useState, useEffect } from 'react';
 import {
   db, auth, doc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot,
@@ -125,6 +124,16 @@ export default function AdminSettings() {
   };
   const pwStrength = getStrength(newPw);
 
+  // Calculate width percentage for password strength bar – using plain concatenation
+  const strengthWidth = (() => {
+    if (newPw.length >= 8) {
+      if (pwStrength.label === 'Strong') return 100;
+      if (pwStrength.label === 'Medium') return 66;
+      return 33;
+    }
+    return 10;
+  })();
+
   // Profile update
   const handleProfileUpdate = async () => {
     if (!profile.fullName.trim()) return toast.error('Name cannot be empty.');
@@ -180,7 +189,7 @@ export default function AdminSettings() {
   };
   const handleClearAuditLogs = async () => {
     if (!window.confirm('Delete all audit logs? This cannot be undone.')) return;
-    // Actually clearing requires server-side logic or batch delete – placeholder
+    // Placeholder for clearing
     toast.success('Audit logs cleared (simulated)');
     logAudit('CLEAR_AUDIT_LOGS');
   };
@@ -237,7 +246,7 @@ export default function AdminSettings() {
             </div>
             {newPw && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ height: 6, borderRadius: 3, background: pwStrength.color, width: `${ (newPw.length >= 8 ? (pwStrength.label === 'Strong' ? 100 : pwStrength.label === 'Medium' ? 66 : 33) : 10) }%`, transition: 'width 0.3s' }} />
+                <div style={{ height: 6, borderRadius: 3, background: pwStrength.color, width: strengthWidth + '%', transition: 'width 0.3s' }} />
                 <small style={{ color: pwStrength.color }}>{pwStrength.label}</small>
               </div>
             )}
@@ -304,4 +313,3 @@ export default function AdminSettings() {
     </>
   );
 }
-```
