@@ -1,4 +1,3 @@
-```jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -34,7 +33,7 @@ const hamburgerStyle = {
   color: '#fff',
   fontSize: '1.5rem',
   cursor: 'pointer',
-  display: 'none', // shown via mobile styles later
+  display: 'none', // shown via media query
 };
 
 const logoStyle = {
@@ -154,7 +153,7 @@ const getSettingsPath = (role) => {
   switch (role) {
     case 'admin': return '/admin/settings';
     case 'accountant': return '/accountant/settings';
-    case 'client': return '/client/settings'; // fallback
+    case 'client': return '/client/settings';
     default: return '/';
   }
 };
@@ -206,107 +205,98 @@ export default function Navbar({ onMenuClick }) {
 
   const settingsPath = getSettingsPath(userRole);
 
+  // We'll conditionally render the role badge only if not mobile.
+  // To detect mobile without style injection, we listen to window resize and store as state.
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const showHamburger = currentUser && isMobile;
+  const showCenterBadge = currentUser && !isMobile;
+
   return (
-    <>
-      <nav style={navStyle}>
-        {/* Left side */}
-        <div style={leftStyle}>
-          {currentUser && (
-            <button
-              style={hamburgerStyle}
-              onClick={onMenuClick}
-              aria-label="Toggle menu"
-            >
-              ☰
-            </button>
-          )}
-          <Link to={currentUser ? '/' : '/'} style={logoStyle}>
-            Acciox
-          </Link>
-          <span style={subtitleStyle}>AI Finance Platform</span>
-        </div>
-
-        {/* Center – role badge (desktop only) */}
-        {currentUser && (
-          <div className="nav-center-badge" style={centerStyle}>
-            <span style={badgeStyle}>{roleLabel}</span>
-          </div>
+    <nav style={navStyle}>
+      {/* Left side */}
+      <div style={leftStyle}>
+        {showHamburger && (
+          <button
+            style={{ ...hamburgerStyle, display: 'block' }}
+            onClick={onMenuClick}
+            aria-label="Toggle menu"
+          >
+            ☰
+          </button>
         )}
+        <Link to={currentUser ? '/' : '/'} style={logoStyle}>
+          Acciox
+        </Link>
+        <span style={subtitleStyle}>AI Finance Platform</span>
+      </div>
 
-        {/* Right side */}
-        <div style={rightStyle}>
-          {!currentUser ? (
-            <>
-              <Link to="/terms" style={linkStyle}>Terms</Link>
-              <Link to="/privacy" style={linkStyle}>Privacy</Link>
-            </>
-          ) : (
-            <>
-              <NotificationBell />
-              <div style={avatarContainerStyle} ref={avatarRef}>
-                <button style={avatarStyle} onClick={toggleDropdown}>
-                  {userInitial}
-                </button>
-                {isDropdownOpen && (
-                  <div style={dropdownStyle}>
-                    <div style={dropdownUserInfoStyle}>
-                      <p style={userNameStyle}>
-                        {currentUser.displayName || 'User'}
-                      </p>
-                      <p style={userEmailStyle}>{currentUser.email}</p>
-                    </div>
-                    <Link
-                      to={settingsPath}
-                      style={dropdownLinkStyle}
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Settings
-                    </Link>
-                    <hr style={dividerStyle} />
-                    <Link
-                      to="/terms"
-                      style={dropdownLinkStyle}
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Terms of Service
-                    </Link>
-                    <Link
-                      to="/privacy"
-                      style={dropdownLinkStyle}
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Privacy Policy
-                    </Link>
-                    <hr style={dividerStyle} />
-                    <button style={logoutBtnStyle} onClick={handleLogout}>
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
+      {/* Center – role badge (desktop only) */}
+      {showCenterBadge && (
+        <div style={centerStyle}>
+          <span style={badgeStyle}>{roleLabel}</span>
         </div>
-      </nav>
+      )}
 
-      {/* Embedded responsive CSS – hide center badge on mobile */}
-      <style>{`
-        .nav-center-badge {
-          display: flex;
-        }
-        @media (max-width: 768px) {
-          .nav-center-badge {
-            display: none;
-          }
-          button[aria-label="Toggle menu"] {
-            display: block !important;
-          }
-        }
-        button[aria-label="Toggle menu"] {
-          display: none;
-        }
-      `}</style>
-    </>
+      {/* Right side */}
+      <div style={rightStyle}>
+        {!currentUser ? (
+          <>
+            <Link to="/terms" style={linkStyle}>Terms</Link>
+            <Link to="/privacy" style={linkStyle}>Privacy</Link>
+          </>
+        ) : (
+          <>
+            <NotificationBell />
+            <div style={avatarContainerStyle} ref={avatarRef}>
+              <button style={avatarStyle} onClick={toggleDropdown}>
+                {userInitial}
+              </button>
+              {isDropdownOpen && (
+                <div style={dropdownStyle}>
+                  <div style={dropdownUserInfoStyle}>
+                    <p style={userNameStyle}>
+                      {currentUser.displayName || 'User'}
+                    </p>
+                    <p style={userEmailStyle}>{currentUser.email}</p>
+                  </div>
+                  <Link
+                    to={settingsPath}
+                    style={dropdownLinkStyle}
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    Settings
+                  </Link>
+                  <hr style={dividerStyle} />
+                  <Link
+                    to="/terms"
+                    style={dropdownLinkStyle}
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    Terms of Service
+                  </Link>
+                  <Link
+                    to="/privacy"
+                    style={dropdownLinkStyle}
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    Privacy Policy
+                  </Link>
+                  <hr style={dividerStyle} />
+                  <button style={logoutBtnStyle} onClick={handleLogout}>
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </nav>
   );
 }
-```
