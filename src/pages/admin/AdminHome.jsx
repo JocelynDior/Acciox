@@ -1,4 +1,3 @@
-```jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -23,18 +22,13 @@ const pageWrapper = {
   fontFamily: "'Inter', system-ui, sans-serif",
 };
 
-const mainContent = {
-  marginLeft: 260,
+// Responsive: on mobile hide sidebar margin
+const mainContentBase = {
   paddingTop: 80,
   padding: '80px 24px 40px',
   flex: 1,
+  marginLeft: 260,
   transition: 'margin 0.3s',
-};
-
-// Responsive: on mobile hide sidebar margin
-const mobileMain = {
-  ...mainContent,
-  marginLeft: 0,
 };
 
 const card = {
@@ -112,12 +106,37 @@ export default function AdminHome() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
 
+  // Dynamic main content style: hide sidebar margin on mobile
+  const mainContent = {
+    ...mainContentBase,
+    marginLeft: isMobile ? 0 : 260,
+  };
+
+  // Role badge styles – no style injection needed
+  const badgeStyle = (color) => ({
+    background: color,
+    color: '#fff',
+    padding: '4px 14px',
+    borderRadius: 20,
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+  });
+
+  // Hide the centre badge on mobile via conditional rendering, not style injection
+  const renderRoleBadge = () => {
+    if (isMobile) return null;
+    const roleLabel = currentUser?.role || 'admin';
+    const color = roleLabel === 'admin' ? '#c026d3' : '#7e22ce';
+    return <span style={badgeStyle(color)}>{roleLabel}</span>;
+  };
+
   return (
     <>
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={mainContent}>
           {/* Welcome Header */}
           <div style={{ marginBottom: 28 }}>
             <h1 style={{ ...gradientTitle, fontSize: '1.8rem', marginBottom: 4 }}>
@@ -268,4 +287,3 @@ export default function AdminHome() {
     </>
   );
 }
-```
