@@ -1,4 +1,3 @@
-```jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -16,8 +15,7 @@ const pageWrapper = {
   minHeight: '100vh', display: 'flex',
   fontFamily: "'Inter', system-ui, sans-serif",
 };
-const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1 };
-const mobileMain = { ...mainContent, marginLeft: 0 };
+const mainContentBase = { paddingTop: 80, padding: '80px 24px 40px', flex: 1, marginLeft: 260 };
 const card = {
   background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)',
   WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.15)',
@@ -44,7 +42,7 @@ export default function CompanyWorkspace() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [company, setCompany] = useState(null);
   const [recentTx, setRecentTx] = useState([]);
-  const [allTx, setAllTx] = useState([]); // for stats
+  const [allTx, setAllTx] = useState([]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -52,7 +50,6 @@ export default function CompanyWorkspace() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch company doc
   useEffect(() => {
     if (!companyId) return;
     const unsub = onSnapshot(doc(db, 'companies', companyId), (snap) => {
@@ -62,7 +59,6 @@ export default function CompanyWorkspace() {
     return () => unsub();
   }, [companyId]);
 
-  // Fetch transactions for this company
   useEffect(() => {
     if (!companyId) return;
     const q = query(
@@ -78,7 +74,6 @@ export default function CompanyWorkspace() {
     return () => unsub();
   }, [companyId]);
 
-  // Stats
   const now = new Date();
   const thisMonth = (tx) => {
     if (!tx.createdAt) return false;
@@ -87,34 +82,38 @@ export default function CompanyWorkspace() {
   };
   const monthlyTx = allTx.filter(thisMonth);
   const pendingReview = allTx.filter(t => t.status === 'pending' || t.needsReview === true).length;
-  const totalExpenses = allTx.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0); // simplified
+  const totalExpenses = allTx.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
   const lastSync = company?.lastSync ? new Date(company.lastSync.seconds * 1000).toLocaleString() : 'Never';
 
-  // Navigation items
+  // Build nav items using string concatenation to avoid backticks
+  const baseCompanyPath = '/company/' + companyId;
   const navItems = [
-    { to: `/company/${companyId}/transactions`, icon: <FiList size={28} />, label: 'Transactions' },
-    { to: `/company/${companyId}/expenses`, icon: <FiUsers size={28} />, label: 'Staff Expenses' },
-    { to: `/company/${companyId}/payroll`, icon: <FiDollarSign size={28} />, label: 'Payroll' },
-    { to: `/company/${companyId}/reports`, icon: <FiPieChart size={28} />, label: 'Reports' },
-    { to: `/company/${companyId}/invoices`, icon: <FiCreditCard size={28} />, label: 'Invoices' },
-    { to: `/company/${companyId}/chat/group`, icon: <FiMessageSquare size={28} />, label: 'Group Chat' },
-    { to: `/company/${companyId}/chat/ai`, icon: <FiCpu size={28} />, label: 'AI Chat' },
-    { to: `/accountant/sync`, icon: <FiRefreshCw size={28} />, label: 'Sync Manager' },
+    { to: baseCompanyPath + '/transactions', icon: <FiList size={28} />, label: 'Transactions' },
+    { to: baseCompanyPath + '/expenses', icon: <FiUsers size={28} />, label: 'Staff Expenses' },
+    { to: baseCompanyPath + '/payroll', icon: <FiDollarSign size={28} />, label: 'Payroll' },
+    { to: baseCompanyPath + '/reports', icon: <FiPieChart size={28} />, label: 'Reports' },
+    { to: baseCompanyPath + '/invoices', icon: <FiCreditCard size={28} />, label: 'Invoices' },
+    { to: baseCompanyPath + '/chat/group', icon: <FiMessageSquare size={28} />, label: 'Group Chat' },
+    { to: baseCompanyPath + '/chat/ai', icon: <FiCpu size={28} />, label: 'AI Chat' },
+    { to: '/accountant/sync', icon: <FiRefreshCw size={28} />, label: 'Sync Manager' },
   ];
+
+  const mainContent = {
+    ...mainContentBase,
+    marginLeft: isMobile ? 0 : 260,
+  };
 
   return (
     <>
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} companyId={companyId} companyName={company?.companyName} />
-        <main style={isMobile ? mobileMain : mainContent}>
-          {/* Back button */}
+        <main style={mainContent}>
           <button onClick={() => navigate('/accountant')} style={{ background: 'none', border: 'none', color: '#e879f9', cursor: 'pointer', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.95rem' }}>
             <FiArrowLeft /> Back to Companies
           </button>
 
-          {/* Company Header */}
           {company && (
             <div style={{ marginBottom: 28 }}>
               <h1 style={{ ...gradientTitle, fontSize: '2rem', marginBottom: 4 }}>{company.companyName}</h1>
@@ -126,31 +125,13 @@ export default function CompanyWorkspace() {
             </div>
           )}
 
-          {/* Overview Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-            <div style={card}>
-              <FiBriefcase size={24} color="#c026d3" />
-              <h2 style={{ fontSize: '2rem', margin: '8px 0', fontWeight: 700 }}>{monthlyTx.length}</h2>
-              <p style={{ color: 'rgba(255,255,255,0.7)' }}>Transactions (This Month)</p>
-            </div>
-            <div style={card}>
-              <FiAlertCircle size={24} color="#f59e0b" />
-              <h2 style={{ fontSize: '2rem', margin: '8px 0', fontWeight: 700 }}>{pendingReview}</h2>
-              <p style={{ color: 'rgba(255,255,255,0.7)' }}>Pending AI Review</p>
-            </div>
-            <div style={card}>
-              <FiTrendingUp size={24} color="#3b82f6" />
-              <h2 style={{ fontSize: '2rem', margin: '8px 0', fontWeight: 700 }}>${totalExpenses.toFixed(2)}</h2>
-              <p style={{ color: 'rgba(255,255,255,0.7)' }}>Total Expenses</p>
-            </div>
-            <div style={card}>
-              <FiRefreshCw size={24} color="#22c55e" />
-              <p style={{ margin: '8px 0', fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>Last Sync</p>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>{lastSync}</p>
-            </div>
+            <div style={card}><FiBriefcase size={24} color="#c026d3" /><h2>{monthlyTx.length}</h2><p>Transactions (This Month)</p></div>
+            <div style={card}><FiAlertCircle size={24} color="#f59e0b" /><h2>{pendingReview}</h2><p>Pending AI Review</p></div>
+            <div style={card}><FiTrendingUp size={24} color="#3b82f6" /><h2>${totalExpenses.toFixed(2)}</h2><p>Total Expenses</p></div>
+            <div style={card}><FiRefreshCw size={24} color="#22c55e" /><p style={{ margin: '8px 0', fontWeight: 600 }}>Last Sync</p><p style={{ fontSize: '0.9rem' }}>{lastSync}</p></div>
           </div>
 
-          {/* Quick Navigation Grid */}
           <h2 style={{ marginBottom: 16, color: '#fff', fontSize: '1.2rem' }}>Quick Navigation</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16, marginBottom: 32 }}>
             {navItems.map(item => (
@@ -167,8 +148,7 @@ export default function CompanyWorkspace() {
             ))}
           </div>
 
-          {/* Recent Transactions Preview */}
-          <h2 style={{ marginBottom: 16, color: '#fff', fontSize: '1.2rem' }}>Recent Transactions</h2>
+          <h2 style={{ marginBottom: 16, color: '#fff' }}>Recent Transactions</h2>
           <div style={card}>
             {recentTx.length === 0 ? (
               <p style={{ color: 'rgba(255,255,255,0.5)' }}>No transactions yet.</p>
@@ -204,12 +184,11 @@ export default function CompanyWorkspace() {
               </table>
             )}
             <div style={{ marginTop: 16, textAlign: 'right' }}>
-              <Link to={`/company/${companyId}/transactions`} style={{ color: '#e879f9', textDecoration: 'none', fontWeight: 600 }}>View All →</Link>
+              <Link to={baseCompanyPath + '/transactions'} style={{ color: '#e879f9', textDecoration: 'none', fontWeight: 600 }}>View All →</Link>
             </div>
           </div>
 
-          {/* AI Processing Status */}
-          <h2 style={{ marginTop: 32, marginBottom: 16, color: '#fff', fontSize: '1.2rem' }}>AI Processing Status</h2>
+          <h2 style={{ marginTop: 32, marginBottom: 16, color: '#fff' }}>AI Processing Status</h2>
           <div style={card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ color: 'rgba(255,255,255,0.8)' }}>AI Engine: Active</span>
@@ -226,4 +205,3 @@ export default function CompanyWorkspace() {
     </>
   );
 }
-```
