@@ -1,4 +1,3 @@
-```jsx
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -124,4 +123,3 @@ export function useAuth() {
 }
 
 export default AuthContext;
-```
