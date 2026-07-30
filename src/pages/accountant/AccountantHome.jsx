@@ -198,7 +198,7 @@ export default function AccountantHome() {
                     e.currentTarget.style.transform = '';
                     e.currentTarget.style.boxShadow = '';
                   }}
-                  onClick={() => navigate(`/accountant/company/${company.id}`)}
+                  onClick={() => navigate('/accountant/company/' + company.id)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
                     <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #7e22ce, #c026d3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.2rem' }}>
