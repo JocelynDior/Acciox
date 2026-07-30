@@ -1,4 +1,3 @@
-```jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -103,7 +102,7 @@ const brandStyle = {
   marginTop: 4,
 };
 
-// ---- Sidebar Component ----
+// ---- Sidebar Component (default export) ----
 export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
   const { userRole } = useAuth();
   const location = useLocation();
@@ -253,4 +252,3 @@ export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
     </>
   );
 }
-```
