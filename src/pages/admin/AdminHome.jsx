@@ -5,7 +5,7 @@ import { db, collection, onSnapshot, query, where, orderBy } from '../../firebas
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
-  FiBuilding,
+  FiBriefcase,   // ✅ Changed from FiBuilding
   FiUsers,
   FiCheckCircle,
   FiClock,
@@ -112,25 +112,6 @@ export default function AdminHome() {
     marginLeft: isMobile ? 0 : 260,
   };
 
-  // Role badge styles – no style injection needed
-  const badgeStyle = (color) => ({
-    background: color,
-    color: '#fff',
-    padding: '4px 14px',
-    borderRadius: 20,
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-  });
-
-  // Hide the centre badge on mobile via conditional rendering, not style injection
-  const renderRoleBadge = () => {
-    if (isMobile) return null;
-    const roleLabel = currentUser?.role || 'admin';
-    const color = roleLabel === 'admin' ? '#c026d3' : '#7e22ce';
-    return <span style={badgeStyle(color)}>{roleLabel}</span>;
-  };
-
   return (
     <>
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
@@ -148,7 +129,7 @@ export default function AdminHome() {
           {/* Stats Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
             <div style={card}>
-              <FiBuilding size={24} color="#c026d3" />
+              <FiBriefcase size={24} color="#c026d3" />   {/* ✅ Changed */}
               <h2 style={{ fontSize: '2rem', margin: '8px 0', fontWeight: 700 }}>{totalCompanies}</h2>
               <p style={{ color: 'rgba(255,255,255,0.7)' }}>Total Companies</p>
             </div>
