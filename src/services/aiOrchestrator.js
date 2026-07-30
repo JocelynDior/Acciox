@@ -1,4 +1,3 @@
-```javascript
 const PROXY_URL = 'https://acciox.vercel.app/chat';
 const MODEL = 'llama-3.3-70b-versatile';
 const SYSTEM_PROMPT =
@@ -16,7 +15,7 @@ async function callGroq(messages) {
     body: JSON.stringify({ model: MODEL, messages }),
   });
 
-  if (!response.ok) throw new Error(`Groq proxy error: ${response.status}`);
+  if (!response.ok) throw new Error('Groq proxy error: ' + response.status);
   const data = await response.json();
 
   // Extract the assistant's reply
@@ -76,7 +75,7 @@ async function categorizeTransaction(transaction) {
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Categorize this transaction into a category like "Office Supplies", "Travel", "Meals", "Software", etc. Return JSON with fields "category" and "confidence" (a number 0-1). Transaction: ${JSON.stringify(transaction)}`,
+      content: "Categorize this transaction into a category like 'Office Supplies', 'Travel', 'Meals', 'Software', etc. Return JSON with fields 'category' and 'confidence' (a number 0-1). Transaction: " + JSON.stringify(transaction),
     },
   ];
 
@@ -109,7 +108,7 @@ async function analyzeExpense(expense) {
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Analyze this staff expense claim for legitimacy. Return JSON with fields "isLegitimate" (boolean) and "reason" (string). Expense: ${JSON.stringify(expense)}`,
+      content: "Analyze this staff expense claim for legitimacy. Return JSON with fields 'isLegitimate' (boolean) and 'reason' (string). Expense: " + JSON.stringify(expense),
     },
   ];
 
@@ -144,7 +143,7 @@ async function generateInsight(companyData) {
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Generate a concise financial insight summary based on this company data. Return JSON with field "insightSummary" (string). Company data: ${JSON.stringify(companyData)}`,
+      content: "Generate a concise financial insight summary based on this company data. Return JSON with field 'insightSummary' (string). Company data: " + JSON.stringify(companyData),
     },
   ];
 
@@ -178,7 +177,7 @@ async function answerQuery(question, companyContext) {
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Answer the following question about company finances using the provided context. Context: ${JSON.stringify(companyContext)}\nQuestion: ${question}\nReturn JSON with field "answer" (string).`,
+      content: "Answer the following question about company finances using the provided context. Context: " + JSON.stringify(companyContext) + "\nQuestion: " + question + "\nReturn JSON with field 'answer' (string).",
     },
   ];
 
@@ -210,4 +209,3 @@ export {
   generateInsight,
   answerQuery,
 };
-```
