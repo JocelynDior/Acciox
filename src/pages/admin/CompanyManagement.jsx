@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
-  FiBuilding, FiSearch, FiPlus, FiCheck, FiTrash2, FiEye,
+  FiBriefcase, FiSearch, FiPlus, FiCheck, FiTrash2, FiEye,
 } from 'react-icons/fi';
 
 // ---- Inline Styles ----
@@ -136,14 +136,6 @@ export default function CompanyManagement() {
   const handleVerify = async (company) => {
     try {
       await updateDoc(doc(db, 'companies', company.id), { status: 'verified' });
-      // update linked user status
-      if (company.ownerEmail) {
-        const usersSnap = await onSnapshot(query(collection(db, 'users'), where('email', '==', company.ownerEmail.trim().toLowerCase())), (snap) => {
-          snap.forEach(async (userDoc) => {
-            await updateDoc(doc(db, 'users', userDoc.id), { status: 'active' });
-          });
-        });
-      }
       toast.success('Company verified successfully');
       logAudit('VERIFY_COMPANY', company.companyName);
     } catch (err) {
@@ -195,7 +187,7 @@ export default function CompanyManagement() {
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <h1 style={{ ...gradientTitle, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <FiBuilding /> Company Management
+              <FiBriefcase /> Company Management
             </h1>
             <button
               onClick={() => setModalOpen(true)}
