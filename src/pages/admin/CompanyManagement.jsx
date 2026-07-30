@@ -1,4 +1,3 @@
-```jsx
 import React, { useState, useEffect } from 'react';
 import {
   db, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
@@ -170,8 +169,8 @@ export default function CompanyManagement() {
       <div style={modalCard} onClick={e => e.stopPropagation()}>
         <h3 style={{ marginBottom: 12 }}>{confirm.type === 'verify' ? 'Verify Company' : 'Delete Company'}</h3>
         <p>{confirm.type === 'verify'
-          ? `Are you sure you want to verify "${confirm.company?.companyName}"? The linked client will be activated.`
-          : `Are you sure you want to permanently delete "${confirm.company?.companyName}"?`
+          ? 'Are you sure you want to verify "' + (confirm.company?.companyName || '') + '"? The linked client will be activated.'
+          : 'Are you sure you want to permanently delete "' + (confirm.company?.companyName || '') + '"?'
         }</p>
         <div style={{ display: 'flex', gap: 12, marginTop: 20, justifyContent: 'flex-end' }}>
           <button
@@ -309,4 +308,3 @@ const inputStyle = {
   outline: 'none',
   fontSize: '0.95rem',
 };
-```
