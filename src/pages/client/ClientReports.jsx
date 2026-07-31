@@ -20,6 +20,7 @@ const card = {
 
 export default function ClientReports() {
   const { companyId } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('pnl');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -62,9 +63,9 @@ export default function ClientReports() {
 
   return (
     <>
-      <Navbar />
+      <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
-        <Sidebar />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main style={isMobile ? mobileMain : mainContent}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
             <h1 style={{ color: '#fff' }}>Financial Reports <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.1)', borderRadius: 20, padding: '2px 12px' }}>👁️ View Only</span></h1>
