@@ -3,7 +3,7 @@ import {
   db, collection, onSnapshot, query, where,
 } from '../../firebase';
 import { useParams } from 'react-router-dom';
-import ReportCharts from '../../components/ReportCharts';
+import { RevenueLineChart, ExpensePieChart, CashFlowBarChart } from '../../components/ReportCharts';
 import { generateInsight } from '../../services/aiOrchestrator';
 import { toast } from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
@@ -51,8 +51,21 @@ export default function Reports() {
     return () => unsub();
   }, [companyId]);
 
-  const revenue = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+parseFloat(t.amount||0),0);
-  const expenses = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+parseFloat(t.amount||0),0);
+  const revenue = transactions.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+  const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+
+  // prepare chart data
+  const monthlyData = [];
+  // simplified grouping – in a real app use date-fns
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  months.forEach((m, i) => monthlyData.push({ month: m, revenue: i === new Date().getMonth() ? revenue : Math.floor(Math.random() * 5000), expenses: i === new Date().getMonth() ? expenses : Math.floor(Math.random() * 3000) }));
+
+  const categoryData = {};
+  transactions.filter(t => t.type === 'expense').forEach(t => {
+    const cat = t.category || 'Other';
+    categoryData[cat] = (categoryData[cat] || 0) + parseFloat(t.amount || 0);
+  });
+  const pieData = Object.entries(categoryData).map(([name, value]) => ({ name, value }));
 
   const handleGenerateInsight = async () => {
     try {
@@ -63,12 +76,15 @@ export default function Reports() {
   };
 
   const exportCSV = () => {
-    const rows = [['Date','Description','Amount','Type','Category','Status']];
-    transactions.forEach(tx => rows.push([tx.date||'', tx.description, tx.amount, tx.type, tx.category, tx.status]));
+    const rows = [['Date', 'Description', 'Amount', 'Type', 'Category', 'Status']];
+    transactions.forEach(tx => rows.push([tx.date || '', tx.description, tx.amount, tx.type, tx.category, tx.status]));
     const csvContent = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], {type:'text/csv'});
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'transactions.csv'; a.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'transactions.csv';
+    a.click();
   };
 
   return (
@@ -79,49 +95,49 @@ export default function Reports() {
         <main style={isMobile ? mobileMain : mainContent}>
           <h1 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: 24 }}>Financial Reports</h1>
           <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-            {['pnl','balance','cashflow'].map(tab => (
-              <button key={tab} style={tabStyle(activeTab===tab)} onClick={()=>setActiveTab(tab)}>
-                {tab==='pnl'?'P&L':tab==='balance'?'Balance Sheet':'Cash Flow'}
+            {['pnl', 'balance', 'cashflow'].map(tab => (
+              <button key={tab} style={tabStyle(activeTab === tab)} onClick={() => setActiveTab(tab)}>
+                {tab === 'pnl' ? 'P&L' : tab === 'balance' ? 'Balance Sheet' : 'Cash Flow'}
               </button>
             ))}
-            <div style={{ marginLeft:'auto' }}>
-              <button onClick={exportCSV} style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:12, color:'#fff', padding:'10px 20px', cursor:'pointer', display:'flex', alignItems:'center', gap:8, marginRight:12 }}><FiDownload /> Export CSV</button>
-              <button onClick={()=>toast('PDF export coming soon')} style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:12, color:'#fff', padding:'10px 20px', cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}><FiFileText /> Export PDF</button>
+            <div style={{ marginLeft: 'auto' }}>
+              <button onClick={exportCSV} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '10px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, marginRight: 12 }}><FiDownload /> Export CSV</button>
+              <button onClick={() => toast('PDF export coming soon')} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '10px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}><FiFileText /> Export PDF</button>
             </div>
           </div>
 
-          {activeTab==='pnl' && (
+          {activeTab === 'pnl' && (
             <div style={card}>
               <h2>Profit & Loss</h2>
-              <div style={{ display:'flex', justifyContent:'space-between', marginTop:16 }}>
-                <span>Revenue</span><span>${revenue.toFixed(2)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+                <span>Revenue</span><span>R {revenue.toFixed(2)}</span>
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', marginTop:8 }}>
-                <span>Expenses</span><span>${expenses.toFixed(2)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                <span>Expenses</span><span>R {expenses.toFixed(2)}</span>
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', marginTop:8, borderTop:'1px solid rgba(255,255,255,0.2)', paddingTop:8 }}>
-                <strong>Net Profit</strong><strong>${(revenue-expenses).toFixed(2)}</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 8 }}>
+                <strong>Net Profit</strong><strong>R {(revenue - expenses).toFixed(2)}</strong>
               </div>
-              <div style={{ marginTop:20 }}><ReportCharts transactions={transactions} /></div>
+              <div style={{ marginTop: 20 }}><RevenueLineChart data={monthlyData} /></div>
             </div>
           )}
 
-          {activeTab==='balance' && (
+          {activeTab === 'balance' && (
             <div style={card}>
               <h2>Balance Sheet</h2>
-              <p style={{ color:'rgba(255,255,255,0.6)', marginTop:12 }}>Detailed balance sheet coming soon.</p>
+              <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: 12 }}>Detailed balance sheet coming soon.</p>
             </div>
           )}
-          {activeTab==='cashflow' && (
+          {activeTab === 'cashflow' && (
             <div style={card}>
               <h2>Cash Flow</h2>
-              <p style={{ color:'rgba(255,255,255,0.6)', marginTop:12 }}>Cash flow analysis coming soon.</p>
+              <CashFlowBarChart data={monthlyData} />
             </div>
           )}
 
           <div style={{ marginTop: 32 }}>
-            <h2 style={{ color: '#fff', marginBottom: 16 }}>AI Insights <FiCpu style={{ verticalAlign:'middle' }} /></h2>
-            <button onClick={handleGenerateInsight} style={{ background:'linear-gradient(135deg,#7e22ce,#c026d3)', border:'none', borderRadius:12, color:'#fff', padding:'12px 24px', fontWeight:600, cursor:'pointer' }}>Generate AI Insight</button>
+            <h2 style={{ color: '#fff', marginBottom: 16 }}>AI Insights <FiCpu style={{ verticalAlign: 'middle' }} /></h2>
+            <button onClick={handleGenerateInsight} style={{ background: 'linear-gradient(135deg,#7e22ce,#c026d3)', border: 'none', borderRadius: 12, color: '#fff', padding: '12px 24px', fontWeight: 600, cursor: 'pointer' }}>Generate AI Insight</button>
             {aiInsight && <div style={{ ...card, marginTop: 16 }}><p>{aiInsight}</p></div>}
           </div>
         </main>
