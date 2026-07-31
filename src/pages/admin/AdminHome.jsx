@@ -5,7 +5,7 @@ import { db, collection, onSnapshot, query, where, orderBy } from '../../firebas
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
-  FiBriefcase,   // ✅ Changed from FiBuilding
+  FiBriefcase,
   FiUsers,
   FiCheckCircle,
   FiClock,
@@ -22,7 +22,6 @@ const pageWrapper = {
   fontFamily: "'Inter', system-ui, sans-serif",
 };
 
-// Responsive: on mobile hide sidebar margin
 const mainContentBase = {
   paddingTop: 80,
   padding: '80px 24px 40px',
@@ -58,14 +57,12 @@ export default function AdminHome() {
   const [usersCount, setUsersCount] = useState(0);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // Responsive listener
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch companies
   useEffect(() => {
     const q = collection(db, 'companies');
     const unsub = onSnapshot(q, (snapshot) => {
@@ -75,7 +72,6 @@ export default function AdminHome() {
     return () => unsub();
   }, []);
 
-  // Fetch total users count
   useEffect(() => {
     const q = collection(db, 'users');
     const unsub = onSnapshot(q, (snapshot) => {
@@ -84,12 +80,10 @@ export default function AdminHome() {
     return () => unsub();
   }, []);
 
-  // Derived stats
   const totalCompanies = companies.length;
   const verifiedCompanies = companies.filter(c => c.status === 'verified').length;
   const pendingVerification = companies.filter(c => c.status === 'unverified').length;
 
-  // Recent 5 companies (sorted by createdAt descending)
   const recentCompanies = [...companies]
     .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
     .slice(0, 5);
@@ -106,7 +100,6 @@ export default function AdminHome() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
 
-  // Dynamic main content style: hide sidebar margin on mobile
   const mainContent = {
     ...mainContentBase,
     marginLeft: isMobile ? 0 : 260,
@@ -118,7 +111,6 @@ export default function AdminHome() {
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main style={mainContent}>
-          {/* Welcome Header */}
           <div style={{ marginBottom: 28 }}>
             <h1 style={{ ...gradientTitle, fontSize: '1.8rem', marginBottom: 4 }}>
               Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Admin'}
@@ -126,10 +118,9 @@ export default function AdminHome() {
             <p style={{ color: 'rgba(255,255,255,0.6)' }}>{currentDate}</p>
           </div>
 
-          {/* Stats Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
             <div style={card}>
-              <FiBriefcase size={24} color="#c026d3" />   {/* ✅ Changed */}
+              <FiBriefcase size={24} color="#c026d3" />
               <h2 style={{ fontSize: '2rem', margin: '8px 0', fontWeight: 700 }}>{totalCompanies}</h2>
               <p style={{ color: 'rgba(255,255,255,0.7)' }}>Total Companies</p>
             </div>
@@ -150,9 +141,7 @@ export default function AdminHome() {
             </div>
           </div>
 
-          {/* Recent Activity & Pending Verifications side by side */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 24, marginBottom: 32 }}>
-            {/* Recent Companies */}
             <div style={card}>
               <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FiEye /> Recent Activity
@@ -192,7 +181,6 @@ export default function AdminHome() {
               </button>
             </div>
 
-            {/* Pending Verifications */}
             <div style={card}>
               <h3 style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <FiAlertCircle /> Pending Verifications
@@ -227,7 +215,6 @@ export default function AdminHome() {
             </div>
           </div>
 
-          {/* Quick Actions */}
           <div style={{ ...card, display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
             <button
               onClick={() => navigate('/admin/companies')}
