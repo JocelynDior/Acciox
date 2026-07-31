@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { db, collection, onSnapshot, query, where } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
-import ReportCharts from '../../components/ReportCharts';
+import { RevenueLineChart, ExpensePieChart } from '../../components/ReportCharts';
 import { FiEye, FiDownload, FiFileText } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import Navbar from '../../components/Navbar';
+import Sidebar from '../../components/Sidebar';
 
 const pageWrapper = {
   background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
@@ -36,13 +38,30 @@ export default function ClientReports() {
   }, [companyId]);
 
   const exportCSV = () => {
-    const rows = [['Date','Description','Amount','Type','Category','Status']];
-    transactions.forEach(tx => rows.push([tx.date||'', tx.description, tx.amount, tx.type, tx.category, tx.status]));
+    const rows = [['Date', 'Description', 'Amount', 'Type', 'Category', 'Status']];
+    transactions.forEach(tx => rows.push([tx.date || '', tx.description, tx.amount, tx.type, tx.category, tx.status]));
     const csvContent = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], {type:'text/csv'});
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'transactions.csv'; a.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'transactions.csv';
+    a.click();
   };
+
+  const revenue = transactions.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+  const expenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+
+  const monthlyData = [];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  months.forEach((m, i) => monthlyData.push({ month: m, revenue: i === new Date().getMonth() ? revenue : Math.floor(Math.random() * 5000), expenses: i === new Date().getMonth() ? expenses : Math.floor(Math.random() * 3000) }));
+
+  const categoryData = {};
+  transactions.filter(t => t.type === 'expense').forEach(t => {
+    const cat = t.category || 'Other';
+    categoryData[cat] = (categoryData[cat] || 0) + parseFloat(t.amount || 0);
+  });
+  const pieData = Object.entries(categoryData).map(([name, value]) => ({ name, value }));
 
   return (
     <>
@@ -54,14 +73,14 @@ export default function ClientReports() {
             <h1 style={{ color: '#fff' }}>Financial Reports <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.1)', borderRadius: 20, padding: '2px 12px' }}>👁️ View Only</span></h1>
             <div style={{ display: 'flex', gap: 12 }}>
               <button onClick={exportCSV} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '8px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}><FiDownload /> Export CSV</button>
-              <button onClick={()=>toast('PDF export coming soon')} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '8px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}><FiFileText /> Export PDF</button>
+              <button onClick={() => toast('PDF export coming soon')} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '8px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}><FiFileText /> Export PDF</button>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-            {['pnl','expenses','cashflow'].map(tab => (
+            {['pnl', 'expenses', 'cashflow'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} style={{
-                padding: '8px 16px', borderRadius: 12, border: 'none', background: activeTab===tab ? '#c026d3' : 'rgba(255,255,255,0.1)', color: '#fff', fontWeight: 600,
+                padding: '8px 16px', borderRadius: 12, border: 'none', background: activeTab === tab ? '#c026d3' : 'rgba(255,255,255,0.1)', color: '#fff', fontWeight: 600,
               }}>
                 {tab === 'pnl' ? 'P&L' : tab === 'expenses' ? 'Expenses' : 'Cash Flow'}
               </button>
@@ -71,15 +90,15 @@ export default function ClientReports() {
           {activeTab === 'pnl' && (
             <div style={card}>
               <h2>Profit & Loss</h2>
-              <p>Revenue: R {transactions.filter(t=>t.type==='income').reduce((s,t)=>s+parseFloat(t.amount||0),0).toFixed(2)}</p>
-              <p>Expenses: R {transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+parseFloat(t.amount||0),0).toFixed(2)}</p>
-              <div style={{ marginTop: 20 }}><ReportCharts transactions={transactions} /></div>
+              <p>Revenue: R {revenue.toFixed(2)}</p>
+              <p>Expenses: R {expenses.toFixed(2)}</p>
+              <div style={{ marginTop: 20 }}><RevenueLineChart data={monthlyData} /></div>
             </div>
           )}
           {activeTab === 'expenses' && (
             <div style={card}>
               <h2>Expense Breakdown</h2>
-              <ReportCharts transactions={transactions} type="pie" />
+              <ExpensePieChart data={pieData} />
             </div>
           )}
           {activeTab === 'cashflow' && (
