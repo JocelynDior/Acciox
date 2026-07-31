@@ -4,6 +4,7 @@ import {
 } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useParams } from 'react-router-dom';
+import Navbar from '../../components/Navbar';
 import ChatSidebar from './ChatSidebar';
 import { FiSend } from 'react-icons/fi';
 
