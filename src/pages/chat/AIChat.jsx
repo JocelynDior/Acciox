@@ -5,6 +5,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useParams } from 'react-router-dom';
 import { answerQuery } from '../../services/aiOrchestrator';
+import Navbar from '../../components/Navbar';
 import ChatSidebar from './ChatSidebar';
 import { FiCpu, FiSend } from 'react-icons/fi';
 
