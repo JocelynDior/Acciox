@@ -4,6 +4,7 @@ import {
 } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useParams } from 'react-router-dom';
+import Navbar from '../../components/Navbar';
 import ChatSidebar from './ChatSidebar';
 import { FiSend, FiUser } from 'react-icons/fi';
 
@@ -50,7 +51,8 @@ export default function PrivateChat() {
     if (!companyId || !selectedUser) return;
     const ids = [currentUser.uid, selectedUser.id].sort();
     const chatId = ids.join('_');
-    const q = query(collection(db, 'chats/' + companyId + '/private/' + chatId + '/messages'), orderBy('createdAt', 'asc'));
+    const path = 'chats/' + companyId + '/private/' + chatId + '/messages';
+    const q = query(collection(db, path), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, snap => setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     return () => unsub();
   }, [companyId, selectedUser, currentUser.uid]);
