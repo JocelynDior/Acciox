@@ -2,8 +2,6 @@ import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// ---- Inline Styles (no keyframes, use global animations) ----
-
 const bgGradient = {
   background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #ec4899 100%)',
   minHeight: '100vh',
@@ -48,7 +46,7 @@ const spinnerStyle = {
   border: '4px solid transparent',
   borderTopColor: '#ec4899',
   borderRightColor: '#a855f7',
-  animation: 'spin 1s linear infinite', // references global spin
+  animation: 'spin 1s linear infinite',
 };
 
 const titleText = {
@@ -70,7 +68,6 @@ const btnStyle = {
   boxShadow: '0 4px 15px rgba(168, 85, 247, 0.5)',
 };
 
-// ---- Loading Screen Component ----
 function LoadingScreen() {
   return (
     <div style={bgGradient}>
@@ -85,22 +82,26 @@ function LoadingScreen() {
   );
 }
 
-// ---- RoleGuard Component ----
 export function RoleGuard({ allowedRoles, children }) {
   const { currentUser, userRole, userStatus, loading } = useAuth();
 
   if (loading) return <LoadingScreen />;
   if (!currentUser) return <Navigate to="/login" replace />;
+
+  // Only redirect clients to not-activated, not accountants
   if (userRole === 'client' && userStatus === 'unverified') {
     return <Navigate to="/not-activated" replace />;
   }
+
+  // Accountants and others with unverified status still get to their dashboard
+  // but show a pending approval notice (handled inside their dashboard)
   if (allowedRoles && !allowedRoles.includes(userRole)) {
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/login" replace />;
   }
+
   return children;
 }
 
-// ---- Unauthorized Page Component ----
 export function UnauthorizedPage() {
   const { userRole } = useAuth();
   const navigate = useNavigate();
@@ -111,7 +112,7 @@ export function UnauthorizedPage() {
       accountant: '/accountant',
       client: '/client',
     };
-    navigate(dashRoutes[userRole] || '/');
+    navigate(dashRoutes[userRole] || '/login');
   };
 
   return (
