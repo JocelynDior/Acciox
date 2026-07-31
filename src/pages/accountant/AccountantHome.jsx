@@ -1,16 +1,13 @@
-```jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { db, collection, onSnapshot, query, where, orderBy, limit } from '../../firebase';
-import { toast } from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
   FiBriefcase, FiClock, FiAlertCircle, FiCheckCircle, FiSearch, FiTrendingUp, FiChevronRight,
 } from 'react-icons/fi';
 
-// ---- Inline Styles ----
 const pageWrapper = {
   background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
   minHeight: '100vh', display: 'flex',
@@ -49,14 +46,12 @@ export default function AccountantHome() {
   const [search, setSearch] = useState('');
   const [industryFilter, setIndustryFilter] = useState('all');
 
-  // responsive listener
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch verified companies
   useEffect(() => {
     const q = collection(db, 'companies');
     const unsub = onSnapshot(q, (snapshot) => {
@@ -67,7 +62,6 @@ export default function AccountantHome() {
     return () => unsub();
   }, []);
 
-  // Fetch transactions for stats
   useEffect(() => {
     const q = collection(db, 'transactions');
     const unsub = onSnapshot(q, (snapshot) => {
@@ -76,7 +70,6 @@ export default function AccountantHome() {
     return () => unsub();
   }, []);
 
-  // Fetch recent activities (auditLogs) for this accountant
   useEffect(() => {
     const q = query(
       collection(db, 'auditLogs'),
@@ -91,7 +84,6 @@ export default function AccountantHome() {
     return () => unsub();
   }, [currentUser]);
 
-  // Compute stats
   const pendingTx = transactions.filter(t => t.status === 'pending').length;
   const completedToday = transactions.filter(t => {
     if (t.status !== 'completed' || !t.completedAt) return false;
@@ -101,14 +93,12 @@ export default function AccountantHome() {
   }).length;
   const flaggedItems = transactions.filter(t => t.needsReview === true).length;
 
-  // Filtered companies
   const filteredCompanies = companies.filter(c => {
     const nameMatch = (c.companyName || '').toLowerCase().includes(search.toLowerCase());
     const industryMatch = industryFilter === 'all' || (c.industry || '').toLowerCase() === industryFilter.toLowerCase();
     return nameMatch && industryMatch;
   });
 
-  // Unique industries for filter dropdown
   const industries = [...new Set(companies.map(c => c.industry).filter(Boolean))];
 
   const formatDate = (ts) => {
@@ -127,7 +117,6 @@ export default function AccountantHome() {
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main style={isMobile ? mobileMain : mainContent}>
-          {/* Welcome Header */}
           <div style={{ marginBottom: 28 }}>
             <h1 style={{ ...gradientTitle, fontSize: '1.8rem', marginBottom: 4 }}>
               Welcome back, {currentUser?.displayName || 'Accountant'}
@@ -136,7 +125,6 @@ export default function AccountantHome() {
             <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: 8 }}>Select a company to start working</p>
           </div>
 
-          {/* Stats Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
             <div style={card}>
               <FiBriefcase size={24} color="#c026d3" />
@@ -160,7 +148,6 @@ export default function AccountantHome() {
             </div>
           </div>
 
-          {/* Search & Filter */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.07)', borderRadius: 12, padding: '0 14px', flex: 1, minWidth: 200 }}>
               <FiSearch color="rgba(255,255,255,0.5)" />
@@ -181,7 +168,6 @@ export default function AccountantHome() {
             </select>
           </div>
 
-          {/* Company Grid */}
           <h2 style={{ marginBottom: 16, fontSize: '1.2rem', color: '#fff' }}>Your Companies</h2>
           {filteredCompanies.length === 0 ? (
             <div style={{ ...card, textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>No companies found.</div>
@@ -191,13 +177,8 @@ export default function AccountantHome() {
                 <div
                   key={company.id}
                   style={companyCardStyle}
-                  onMouseEnter={e => {
-                    Object.assign(e.currentTarget.style, companyCardHover);
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = '';
-                    e.currentTarget.style.boxShadow = '';
-                  }}
+                  onMouseEnter={e => Object.assign(e.currentTarget.style, companyCardHover)}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}
                   onClick={() => navigate('/accountant/company/' + company.id)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
@@ -232,7 +213,6 @@ export default function AccountantHome() {
             </div>
           )}
 
-          {/* Recent Activity Feed */}
           <h2 style={{ marginBottom: 16, fontSize: '1.2rem', color: '#fff' }}>Recent Activity</h2>
           <div style={card}>
             {activities.length === 0 ? (
@@ -255,4 +235,3 @@ export default function AccountantHome() {
     </>
   );
 }
-```
