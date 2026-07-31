@@ -26,6 +26,7 @@ const card = {
 
 export default function ClientHome() {
   const { currentUser, companyId } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -55,9 +56,9 @@ export default function ClientHome() {
 
   return (
     <>
-      <Navbar />
+      <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
-        <Sidebar />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main style={isMobile ? mobileMain : mainContent}>
           <div style={{ marginBottom: 28 }}>
             <h1 style={{ color: '#fff' }}>Welcome, {currentUser?.displayName || 'Client'}</h1>
