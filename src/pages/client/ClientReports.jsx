@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { db, collection, onSnapshot, query, where } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import { RevenueLineChart, ExpensePieChart } from '../../components/ReportCharts';
-import { FiEye, FiDownload, FiFileText } from 'react-icons/fi';
-import { toast } from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
+import { FiEye, FiDownload, FiFileText } from 'react-icons/fi';
+import { toast } from 'react-hot-toast';
 
 const pageWrapper = {
   background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
@@ -43,10 +43,7 @@ export default function ClientReports() {
     const csvContent = rows.map(r => r.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'transactions.csv';
-    a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'transactions.csv'; a.click();
   };
 
   const revenue = transactions.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
