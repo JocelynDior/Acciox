@@ -1,4 +1,4 @@
-const PROXY_URL = 'https://acciox.vercel.app/chat';
+const PROXY_URL = 'https://accioxserver.onrender.com/chat';
 const MODEL = 'llama-3.3-70b-versatile';
 const SYSTEM_PROMPT =
   "Acciox AI, an expert accountant and financial analyst. Always respond in structured JSON format.";
@@ -18,11 +18,9 @@ async function callGroq(messages) {
   if (!response.ok) throw new Error('Groq proxy error: ' + response.status);
   const data = await response.json();
 
-  // Extract the assistant's reply
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error('Invalid response from Groq proxy');
 
-  // Attempt to parse the JSON response; fallback to raw string if parsing fails
   try {
     return JSON.parse(content);
   } catch {
@@ -30,33 +28,20 @@ async function callGroq(messages) {
   }
 }
 
-/**
- * Placeholder for future Gemini integration.
- * @returns {Promise<null>}
- */
 async function callGemini() {
   return null;
 }
 
-/**
- * Compares results from two AI models for validation.
- * @param {Object|null} groqResult - Result from Groq.
- * @param {Object|null} geminiResult - Result from Gemini.
- * @returns {Object} Final result with confidence and needsReview flag.
- */
 function compareResults(groqResult, geminiResult) {
-  // If Gemini is not yet active, rely solely on Groq
   if (geminiResult === null || geminiResult === undefined) {
     return { ...groqResult, confidence: 'single-model', needsReview: false };
   }
 
-  // Compare serialized results for equality
   const match = JSON.stringify(groqResult) === JSON.stringify(geminiResult);
   if (match) {
     return { ...groqResult, confidence: 'high', needsReview: false };
   }
 
-  // Disagreement – flag for human review
   return {
     groq: groqResult,
     gemini: geminiResult,
@@ -65,11 +50,6 @@ function compareResults(groqResult, geminiResult) {
   };
 }
 
-/**
- * Categorizes a financial transaction.
- * @param {Object} transaction - The transaction to categorize.
- * @returns {Promise<{category: string, confidence: string, needsReview: boolean}>}
- */
 async function categorizeTransaction(transaction) {
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -98,11 +78,6 @@ async function categorizeTransaction(transaction) {
   };
 }
 
-/**
- * Analyzes a staff expense claim for legitimacy.
- * @param {Object} expense - The expense claim.
- * @returns {Promise<{isLegitimate: boolean, reason: string, confidence: string, needsReview: boolean}>}
- */
 async function analyzeExpense(expense) {
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -133,11 +108,6 @@ async function analyzeExpense(expense) {
   };
 }
 
-/**
- * Generates a financial insight summary from company data.
- * @param {Object} companyData - Data about the company.
- * @returns {Promise<{insightSummary: string, confidence: string, needsReview: boolean}>}
- */
 async function generateInsight(companyData) {
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -166,12 +136,6 @@ async function generateInsight(companyData) {
   };
 }
 
-/**
- * Answers a user question about company finances using provided context.
- * @param {string} question - User's question.
- * @param {Object} companyContext - Financial data for context.
- * @returns {Promise<{answer: string, confidence: string, needsReview: boolean}>}
- */
 async function answerQuery(question, companyContext) {
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
