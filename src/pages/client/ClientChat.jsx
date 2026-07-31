@@ -14,13 +14,14 @@ const mobileMain = { ...mainContent, marginLeft: 0 };
 
 export default function ClientChat() {
   const { companyId } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const isMobile = window.innerWidth <= 768;
 
   return (
     <>
-      <Navbar />
+      <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
-        <Sidebar />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main style={isMobile ? mobileMain : mainContent}>
           <h1 style={{ color: '#fff', marginBottom: 32 }}>Company Chat</h1>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
