@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import { auth, db, doc, setDoc, serverTimestamp } from '../firebase';
+import { auth, db, doc, setDoc, serverTimestamp, collection, query, where, getDocs } from '../firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
-// ---- Inline Styles ----
+const SERVER_URL = 'https://accioxserver.onrender.com';
+
+// ---- Styles ----
 const pageStyle = {
   background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
   minHeight: '100vh',
@@ -26,7 +28,7 @@ const cardStyle = {
   width: '100%',
   color: '#fff',
   boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-  animation: 'fadeIn 0.7s ease forwards', // global fadeIn
+  animation: 'fadeIn 0.7s ease forwards',
 };
 
 const logoStyle = {
@@ -43,13 +45,36 @@ const logoStyle = {
 const subtitleStyle = {
   color: 'rgba(255,255,255,0.6)',
   fontSize: '0.9rem',
-  marginBottom: 32,
+  marginBottom: 24,
   textAlign: 'center',
 };
 
+const tabContainerStyle = {
+  display: 'flex',
+  borderRadius: 12,
+  background: 'rgba(255,255,255,0.05)',
+  padding: 4,
+  marginBottom: 28,
+  gap: 4,
+};
+
+const tabStyle = (active) => ({
+  flex: 1,
+  padding: '10px 6px',
+  borderRadius: 10,
+  border: 'none',
+  cursor: 'pointer',
+  fontWeight: 600,
+  fontSize: '0.82rem',
+  transition: 'all 0.2s',
+  background: active ? 'linear-gradient(135deg, #7e22ce, #c026d3)' : 'transparent',
+  color: active ? '#fff' : 'rgba(255,255,255,0.5)',
+  boxShadow: active ? '0 4px 12px rgba(192,38,211,0.3)' : 'none',
+});
+
 const inputContainerStyle = {
   position: 'relative',
-  marginBottom: 20,
+  marginBottom: 16,
 };
 
 const iconStyle = {
@@ -63,7 +88,7 @@ const iconStyle = {
 
 const inputStyle = {
   width: '100%',
-  padding: '14px 14px 14px 42px',
+  padding: '13px 14px 13px 42px',
   background: 'rgba(255,255,255,0.07)',
   border: '1px solid rgba(255,255,255,0.15)',
   borderRadius: 12,
@@ -72,12 +97,6 @@ const inputStyle = {
   outline: 'none',
   transition: 'border 0.2s',
   boxSizing: 'border-box',
-};
-
-const selectStyle = {
-  ...inputStyle,
-  appearance: 'none',
-  cursor: 'pointer',
 };
 
 const eyeIconStyle = {
@@ -140,102 +159,320 @@ const spinnerStyle = {
   borderRadius: '50%',
   border: '2px solid rgba(255,255,255,0.3)',
   borderTopColor: '#fff',
-  animation: 'spin 0.7s linear infinite', // global spin
+  animation: 'spin 0.7s linear infinite',
 };
 
 const errorTextStyle = {
   color: '#ef4444',
   fontSize: '0.8rem',
-  marginBottom: 12,
+  marginTop: 4,
 };
 
-// Password validation
 function validatePassword(pwd) {
-  const minLength = 8;
-  const hasUpper = /[A-Z]/.test(pwd);
-  const hasNumber = /[0-9]/.test(pwd);
-  const hasSpecial = /[^A-Za-z0-9]/.test(pwd);
-  return pwd.length >= minLength && hasUpper && hasNumber && hasSpecial;
+  return (
+    pwd.length >= 8 &&
+    /[A-Z]/.test(pwd) &&
+    /[0-9]/.test(pwd) &&
+    /[^A-Za-z0-9]/.test(pwd)
+  );
 }
 
-export default function Register() {
+// ---- Client Form ----
+function ClientForm() {
   const navigate = useNavigate();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('client');
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [form, setForm] = useState({
+    fullName: '', username: '', email: '', companyName: '',
+    password: '', confirmPassword: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const sanitize = (str) => str.trim();
+  const set = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = {};
+    const errs = {};
+    if (!form.fullName.trim()) errs.fullName = 'Full name is required.';
+    if (!form.username.trim()) errs.username = 'Username is required.';
+    if (!form.email.trim()) errs.email = 'Email is required.';
+    if (!form.companyName.trim()) errs.companyName = 'Company name is required.';
+    if (!validatePassword(form.password)) errs.password = 'Min 8 chars, uppercase, number & special character.';
+    if (form.password !== form.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    if (!agreeTerms) errs.terms = 'You must agree to Terms and Privacy Policy.';
+    if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    // Sanitize inputs
-    const sanitizedFullName = sanitize(fullName);
-    const sanitizedEmail = email.trim().toLowerCase();
-    const sanitizedCompany = sanitize(companyName);
-
-    if (!sanitizedFullName) newErrors.fullName = 'Full name is required.';
-    if (!sanitizedEmail) newErrors.email = 'Email is required.';
-    if (!sanitizedCompany) newErrors.companyName = 'Company name is required.';
-    if (!validatePassword(password)) {
-      newErrors.password =
-        'Password must be at least 8 characters with uppercase, number, and special character.';
+    setLoading(true);
+    setErrors({});
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, form.email.trim().toLowerCase(), form.password);
+      await setDoc(doc(db, 'users', userCred.user.uid), {
+        uid: userCred.user.uid,
+        fullName: form.fullName.trim(),
+        username: form.username.trim(),
+        email: form.email.trim().toLowerCase(),
+        companyName: form.companyName.trim(),
+        role: 'client',
+        status: 'unverified',
+        createdAt: serverTimestamp(),
+      });
+      await sendEmailVerification(userCred.user);
+      toast.success('Account created! Please login.');
+      navigate('/login');
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') toast.error('Email already in use.');
+      else toast.error(err.message || 'Registration failed.');
+    } finally {
+      setLoading(false);
     }
-    if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match.';
-    if (!agreeTerms) newErrors.terms = 'You must agree to the Terms and Privacy Policy.';
+  };
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+  return (
+    <form onSubmit={handleSubmit}>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>👤</span>
+        <input placeholder="Full Name" value={form.fullName} onChange={set('fullName')} style={inputStyle} disabled={loading} />
+        {errors.fullName && <p style={errorTextStyle}>{errors.fullName}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🏷️</span>
+        <input placeholder="Username" value={form.username} onChange={set('username')} style={inputStyle} disabled={loading} />
+        {errors.username && <p style={errorTextStyle}>{errors.username}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>✉️</span>
+        <input type="email" placeholder="Email address" value={form.email} onChange={set('email')} style={inputStyle} disabled={loading} />
+        {errors.email && <p style={errorTextStyle}>{errors.email}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🏢</span>
+        <input placeholder="Company Name" value={form.companyName} onChange={set('companyName')} style={inputStyle} disabled={loading} />
+        {errors.companyName && <p style={errorTextStyle}>{errors.companyName}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🔒</span>
+        <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={form.password} onChange={set('password')} style={inputStyle} disabled={loading} />
+        <button type="button" style={eyeIconStyle} onClick={() => setShowPassword(p => !p)} tabIndex={-1}>{showPassword ? '🙈' : '👁️'}</button>
+        {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🔒</span>
+        <input type={showConfirm ? 'text' : 'password'} placeholder="Confirm Password" value={form.confirmPassword} onChange={set('confirmPassword')} style={inputStyle} disabled={loading} />
+        <button type="button" style={eyeIconStyle} onClick={() => setShowConfirm(p => !p)} tabIndex={-1}>{showConfirm ? '🙈' : '👁️'}</button>
+        {errors.confirmPassword && <p style={errorTextStyle}>{errors.confirmPassword}</p>}
+      </div>
+      <label style={checkboxLabelStyle}>
+        <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} disabled={loading} />
+        <span>I agree to the <Link to="/terms" target="_blank" style={{ color: '#e879f9' }}>Terms of Service</Link> and <Link to="/privacy" target="_blank" style={{ color: '#e879f9' }}>Privacy Policy</Link></span>
+      </label>
+      {errors.terms && <p style={errorTextStyle}>{errors.terms}</p>}
+      <button type="submit" style={loading ? btnDisabledStyle : btnStyle} disabled={loading}>
+        {loading && <div style={spinnerStyle} />}
+        {loading ? 'Creating Account…' : 'Create Account'}
+      </button>
+    </form>
+  );
+}
+
+// ---- Accountant Form ----
+function AccountantForm() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    fullName: '', username: '', email: '',
+    password: '', confirmPassword: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const set = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!form.fullName.trim()) errs.fullName = 'Full name is required.';
+    if (!form.username.trim()) errs.username = 'Username is required.';
+    if (!form.email.trim()) errs.email = 'Email is required.';
+    if (!validatePassword(form.password)) errs.password = 'Min 8 chars, uppercase, number & special character.';
+    if (form.password !== form.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    if (!agreeTerms) errs.terms = 'You must agree to Terms and Privacy Policy.';
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    setLoading(true);
+    setErrors({});
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, form.email.trim().toLowerCase(), form.password);
+      await setDoc(doc(db, 'users', userCred.user.uid), {
+        uid: userCred.user.uid,
+        fullName: form.fullName.trim(),
+        username: form.username.trim(),
+        email: form.email.trim().toLowerCase(),
+        role: 'accountant',
+        status: 'unverified',
+        createdAt: serverTimestamp(),
+      });
+      await sendEmailVerification(userCred.user);
+      toast.success('Account created! Please login.');
+      navigate('/login');
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') toast.error('Email already in use.');
+      else toast.error(err.message || 'Registration failed.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Never allow admin or accountant role from this form
-    const userRole = 'client';
+  return (
+    <form onSubmit={handleSubmit}>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>👤</span>
+        <input placeholder="Full Name" value={form.fullName} onChange={set('fullName')} style={inputStyle} disabled={loading} />
+        {errors.fullName && <p style={errorTextStyle}>{errors.fullName}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🏷️</span>
+        <input placeholder="Username" value={form.username} onChange={set('username')} style={inputStyle} disabled={loading} />
+        {errors.username && <p style={errorTextStyle}>{errors.username}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>✉️</span>
+        <input type="email" placeholder="Email address" value={form.email} onChange={set('email')} style={inputStyle} disabled={loading} />
+        {errors.email && <p style={errorTextStyle}>{errors.email}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🔒</span>
+        <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={form.password} onChange={set('password')} style={inputStyle} disabled={loading} />
+        <button type="button" style={eyeIconStyle} onClick={() => setShowPassword(p => !p)} tabIndex={-1}>{showPassword ? '🙈' : '👁️'}</button>
+        {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🔒</span>
+        <input type={showConfirm ? 'text' : 'password'} placeholder="Confirm Password" value={form.confirmPassword} onChange={set('confirmPassword')} style={inputStyle} disabled={loading} />
+        <button type="button" style={eyeIconStyle} onClick={() => setShowConfirm(p => !p)} tabIndex={-1}>{showConfirm ? '🙈' : '👁️'}</button>
+        {errors.confirmPassword && <p style={errorTextStyle}>{errors.confirmPassword}</p>}
+      </div>
+      <label style={checkboxLabelStyle}>
+        <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} disabled={loading} />
+        <span>I agree to the <Link to="/terms" target="_blank" style={{ color: '#e879f9' }}>Terms of Service</Link> and <Link to="/privacy" target="_blank" style={{ color: '#e879f9' }}>Privacy Policy</Link></span>
+      </label>
+      {errors.terms && <p style={errorTextStyle}>{errors.terms}</p>}
+      <button type="submit" style={loading ? btnDisabledStyle : btnStyle} disabled={loading}>
+        {loading && <div style={spinnerStyle} />}
+        {loading ? 'Creating Account…' : 'Create Account'}
+      </button>
+    </form>
+  );
+}
+
+// ---- Admin Form ----
+function AdminForm() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    email: '', adminKey: '', password: '', confirmPassword: '',
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showAdminKey, setShowAdminKey] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const set = (field) => (e) => setForm((p) => ({ ...p, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errs = {};
+    if (!form.email.trim()) errs.email = 'Email is required.';
+    if (!form.adminKey.trim()) errs.adminKey = 'Admin key is required.';
+    if (!validatePassword(form.password)) errs.password = 'Min 8 chars, uppercase, number & special character.';
+    if (form.password !== form.confirmPassword) errs.confirmPassword = 'Passwords do not match.';
+    if (Object.keys(errs).length) { setErrors(errs); return; }
 
     setLoading(true);
     setErrors({});
 
     try {
-      const userCred = await createUserWithEmailAndPassword(auth, sanitizedEmail, password);
-      const user = userCred.user;
+      // 1. Verify admin key via Render backend
+      const verifyRes = await fetch(`${SERVER_URL}/verify-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminKey: form.adminKey.trim() }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        setErrors({ adminKey: 'Invalid admin key.' });
+        setLoading(false);
+        return;
+      }
 
-      // Create user document
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        fullName: sanitizedFullName,
-        email: sanitizedEmail,
-        companyName: sanitizedCompany,
-        role: userRole,
-        status: 'unverified',
+      // 2. Check if admin already exists in Firestore
+      const adminQuery = query(collection(db, 'users'), where('role', '==', 'admin'));
+      const adminSnapshot = await getDocs(adminQuery);
+      if (!adminSnapshot.empty) {
+        toast.error('An admin account already exists.');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Create admin account
+      const userCred = await createUserWithEmailAndPassword(auth, form.email.trim().toLowerCase(), form.password);
+      await setDoc(doc(db, 'users', userCred.user.uid), {
+        uid: userCred.user.uid,
+        email: form.email.trim().toLowerCase(),
+        role: 'admin',
+        status: 'active',
         createdAt: serverTimestamp(),
       });
 
-      // Send email verification
-      await sendEmailVerification(user);
-
-      toast.success('Account created! Awaiting admin verification.');
-      navigate('/not-activated');
-    } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
-        toast.error('An account with this email already exists.');
-      } else if (error.code === 'auth/weak-password') {
-        toast.error('Password is too weak. Please use a stronger password.');
-      } else {
-        toast.error(error.message || 'Registration failed.');
-      }
+      toast.success('Admin account created! Please login.');
+      navigate('/login');
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') toast.error('Email already in use.');
+      else toast.error(err.message || 'Registration failed.');
     } finally {
       setLoading(false);
     }
   };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>✉️</span>
+        <input type="email" placeholder="Admin Email" value={form.email} onChange={set('email')} style={inputStyle} disabled={loading} />
+        {errors.email && <p style={errorTextStyle}>{errors.email}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🔑</span>
+        <input type={showAdminKey ? 'text' : 'password'} placeholder="Admin Key" value={form.adminKey} onChange={set('adminKey')} style={inputStyle} disabled={loading} />
+        <button type="button" style={eyeIconStyle} onClick={() => setShowAdminKey(p => !p)} tabIndex={-1}>{showAdminKey ? '🙈' : '👁️'}</button>
+        {errors.adminKey && <p style={errorTextStyle}>{errors.adminKey}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🔒</span>
+        <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={form.password} onChange={set('password')} style={inputStyle} disabled={loading} />
+        <button type="button" style={eyeIconStyle} onClick={() => setShowPassword(p => !p)} tabIndex={-1}>{showPassword ? '🙈' : '👁️'}</button>
+        {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
+      </div>
+      <div style={inputContainerStyle}>
+        <span style={iconStyle}>🔒</span>
+        <input type={showConfirm ? 'text' : 'password'} placeholder="Confirm Password" value={form.confirmPassword} onChange={set('confirmPassword')} style={inputStyle} disabled={loading} />
+        <button type="button" style={eyeIconStyle} onClick={() => setShowConfirm(p => !p)} tabIndex={-1}>{showConfirm ? '🙈' : '👁️'}</button>
+        {errors.confirmPassword && <p style={errorTextStyle}>{errors.confirmPassword}</p>}
+      </div>
+      <button type="submit" style={loading ? btnDisabledStyle : btnStyle} disabled={loading}>
+        {loading && <div style={spinnerStyle} />}
+        {loading ? 'Verifying…' : 'Create Admin Account'}
+      </button>
+    </form>
+  );
+}
+
+// ---- Main Register Page ----
+export default function Register() {
+  const [activeTab, setActiveTab] = useState('client');
 
   return (
     <div style={pageStyle}>
@@ -243,136 +480,23 @@ export default function Register() {
         <h1 style={logoStyle}>Acciox</h1>
         <p style={subtitleStyle}>Create Your Account</p>
 
-        <form onSubmit={handleSubmit}>
-          {/* Full Name */}
-          <div style={inputContainerStyle}>
-            <span style={iconStyle}>👤</span>
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              style={inputStyle}
-              disabled={loading}
-            />
-            {errors.fullName && <p style={errorTextStyle}>{errors.fullName}</p>}
-          </div>
-
-          {/* Email */}
-          <div style={inputContainerStyle}>
-            <span style={iconStyle}>✉️</span>
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={inputStyle}
-              disabled={loading}
-            />
-            {errors.email && <p style={errorTextStyle}>{errors.email}</p>}
-          </div>
-
-          {/* Company Name */}
-          <div style={inputContainerStyle}>
-            <span style={iconStyle}>🏢</span>
-            <input
-              type="text"
-              placeholder="Company Name"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              style={inputStyle}
-              disabled={loading}
-            />
-            {errors.companyName && <p style={errorTextStyle}>{errors.companyName}</p>}
-          </div>
-
-          {/* Password */}
-          <div style={inputContainerStyle}>
-            <span style={iconStyle}>🔒</span>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={inputStyle}
-              disabled={loading}
-            />
+        {/* Tabs */}
+        <div style={tabContainerStyle}>
+          {['client', 'accountant', 'admin'].map((tab) => (
             <button
+              key={tab}
               type="button"
-              style={eyeIconStyle}
-              onClick={() => setShowPassword((prev) => !prev)}
-              tabIndex={-1}
+              style={tabStyle(activeTab === tab)}
+              onClick={() => setActiveTab(tab)}
             >
-              {showPassword ? '🙈' : '👁️'}
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
-            {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
-          </div>
+          ))}
+        </div>
 
-          {/* Confirm Password */}
-          <div style={inputContainerStyle}>
-            <span style={iconStyle}>🔒</span>
-            <input
-              type={showConfirm ? 'text' : 'password'}
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              style={inputStyle}
-              disabled={loading}
-            />
-            <button
-              type="button"
-              style={eyeIconStyle}
-              onClick={() => setShowConfirm((prev) => !prev)}
-              tabIndex={-1}
-            >
-              {showConfirm ? '🙈' : '👁️'}
-            </button>
-            {errors.confirmPassword && <p style={errorTextStyle}>{errors.confirmPassword}</p>}
-          </div>
-
-          {/* Role selector – client only */}
-          <div style={inputContainerStyle}>
-            <span style={iconStyle}>🛡️</span>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              style={selectStyle}
-              disabled={loading}
-            >
-              <option value="client">Client</option>
-            </select>
-            <small style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', display: 'block', marginTop: 4 }}>
-              (Admin & Accountant accounts created by platform admin)
-            </small>
-          </div>
-
-          {/* Terms checkbox */}
-          <label style={checkboxLabelStyle}>
-            <input
-              type="checkbox"
-              checked={agreeTerms}
-              onChange={(e) => setAgreeTerms(e.target.checked)}
-              disabled={loading}
-            />
-            <span>
-              I agree to the{' '}
-              <Link to="/terms" target="_blank" style={{ color: '#e879f9' }}>
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link to="/privacy" target="_blank" style={{ color: '#e879f9' }}>
-                Privacy Policy
-              </Link>
-            </span>
-          </label>
-          {errors.terms && <p style={errorTextStyle}>{errors.terms}</p>}
-
-          {/* Submit */}
-          <button type="submit" style={loading ? btnDisabledStyle : btnStyle} disabled={loading}>
-            {loading ? <div style={spinnerStyle} /> : null}
-            {loading ? 'Creating Account…' : 'Create Account'}
-          </button>
-        </form>
+        {activeTab === 'client' && <ClientForm />}
+        {activeTab === 'accountant' && <AccountantForm />}
+        {activeTab === 'admin' && <AdminForm />}
 
         <div style={loginLinkStyle}>
           Already have an account?{' '}
