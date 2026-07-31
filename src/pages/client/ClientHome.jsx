@@ -2,21 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db, collection, onSnapshot, query, where } from '../../firebase';
 import { Link } from 'react-router-dom';
-import { FiEye, FiDollarSign, FiTrendingUp, FiTrendingDown, FiClock, FiFileText, FiMessageSquare, FiFile } from 'react-icons/fi';
+import Navbar from '../../components/Navbar';
+import Sidebar from '../../components/Sidebar';
+import {
+  FiEye, FiDollarSign, FiTrendingUp, FiTrendingDown, FiClock, FiFileText, FiMessageSquare, FiFile,
+} from 'react-icons/fi';
 
 const pageWrapper = {
   background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
-  minHeight: '100vh', display: 'flex',
+  minHeight: '100vh',
+  display: 'flex',
 };
 const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1 };
 const mobileMain = { ...mainContent, marginLeft: 0 };
 const card = {
-  background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255,255,255,0.15)', borderRadius: 16, padding: 20, color: '#fff',
+  background: 'rgba(255,255,255,0.08)',
+  backdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255,255,255,0.15)',
+  borderRadius: 16,
+  padding: 20,
+  color: '#fff',
 };
 
 export default function ClientHome() {
-  const { currentUser, userRole, companyId } = useAuth();
+  const { currentUser, companyId } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -74,7 +83,7 @@ export default function ClientHome() {
           <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
             <Link to="/client/reports" style={{ ...card, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}><FiFileText /> View Reports</Link>
             <Link to="/client/chat" style={{ ...card, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}><FiMessageSquare /> Open Chat</Link>
-            <Link to={`/company/${companyId}/invoices`} style={{ ...card, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}><FiFile /> View Invoices</Link>
+            <Link to={'/company/' + companyId + '/invoices'} style={{ ...card, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}><FiFile /> View Invoices</Link>
           </div>
         </main>
       </div>
