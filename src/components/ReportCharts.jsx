@@ -9,10 +9,19 @@ const COLORS = ['#c026d3', '#7e22ce', '#e879f9', '#a855f7', '#d946ef'];
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: 10, color: '#fff' }}>
+      <div style={{
+        background: 'rgba(0,0,0,0.8)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.2)',
+        borderRadius: 8,
+        padding: 10,
+        color: '#fff',
+      }}>
         <p>{label}</p>
         {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color }}>{entry.name}: R {entry.value?.toLocaleString()}</p>
+          <p key={index} style={{ color: entry.color }}>
+            {entry.name}: R {entry.value?.toLocaleString()}
+          </p>
         ))}
       </div>
     );
@@ -20,8 +29,9 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export const RevenueLineChart = ({ data }) => {
-  if (!data || data.length === 0) return <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>No data available yet</p>;
+export function RevenueLineChart({ data }) {
+  if (!data || data.length === 0)
+    return <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>No data available yet</p>;
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
@@ -35,25 +45,29 @@ export const RevenueLineChart = ({ data }) => {
       </LineChart>
     </ResponsiveContainer>
   );
-};
+}
 
-export const ExpensePieChart = ({ data }) => {
-  if (!data || data.length === 0) return <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>No data available yet</p>;
+export function ExpensePieChart({ data }) {
+  if (!data || data.length === 0)
+    return <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>No data available yet</p>;
   return (
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
         <Pie data={data} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value" label>
-          {data.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+          {data.map((entry, index) => (
+            <Cell key={index} fill={COLORS[index % COLORS.length]} />
+          ))}
         </Pie>
         <Tooltip />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
   );
-};
+}
 
-export const CashFlowBarChart = ({ data }) => {
-  if (!data || data.length === 0) return <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>No data available yet</p>;
+export function CashFlowBarChart({ data }) {
+  if (!data || data.length === 0)
+    return <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>No data available yet</p>;
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={data}>
@@ -67,12 +81,14 @@ export const CashFlowBarChart = ({ data }) => {
       </BarChart>
     </ResponsiveContainer>
   );
-};
+}
 
-export const MiniLineChart = ({ data, color = '#c026d3' }) => (
-  <ResponsiveContainer width="100%" height={60}>
-    <LineChart data={data}>
-      <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
-    </LineChart>
-  </ResponsiveContainer>
-);
+export function MiniLineChart({ data, color = '#c026d3' }) {
+  return (
+    <ResponsiveContainer width="100%" height={60}>
+      <LineChart data={data}>
+        <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
