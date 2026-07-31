@@ -5,7 +5,6 @@ import { auth, db } from '../firebase';
 
 const AuthContext = createContext(null);
 
-// Session timeout in milliseconds (30 minutes)
 const SESSION_TIMEOUT = 30 * 60 * 1000;
 
 export function AuthProvider({ children }) {
@@ -15,11 +14,9 @@ export function AuthProvider({ children }) {
   const [companyId, setCompanyId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Refs for the idle timer
   const timeoutRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
 
-  // Fetch user data from Firestore
   const fetchUserData = useCallback(async (user) => {
     if (!user) return null;
     try {
@@ -27,41 +24,48 @@ export function AuthProvider({ children }) {
       if (userDoc.exists()) {
         const data = userDoc.data();
         return {
-          role: data.role || 'client',
+          role: data.role || null,
           status: data.status || 'unverified',
           companyId: data.companyId || null,
         };
       }
+      return null;
     } catch (error) {
       console.error('Error fetching user data:', error);
+      return null;
     }
-    // Defaults if document missing or error
-    return { role: 'client', status: 'unverified', companyId: null };
   }, []);
 
-  // Handle authentication state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
       if (user) {
+        setCurrentUser(user);
         const userData = await fetchUserData(user);
-        setUserRole(userData.role);
-        setUserStatus(userData.status);
-        setCompanyId(userData.companyId);
+        if (userData) {
+          setUserRole(userData.role);
+          setUserStatus(userData.status);
+          setCompanyId(userData.companyId);
+        } else {
+          // Could not fetch user data, sign out
+          await signOut(auth);
+          setCurrentUser(null);
+          setUserRole(null);
+          setUserStatus(null);
+          setCompanyId(null);
+        }
       } else {
+        setCurrentUser(null);
         setUserRole(null);
         setUserStatus(null);
         setCompanyId(null);
       }
       setLoading(false);
-      // Reset idle timer when auth state changes
       lastActivityRef.current = Date.now();
     });
 
     return () => unsubscribe();
   }, [fetchUserData]);
 
-  // Logout function
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
@@ -71,12 +75,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Reset the inactivity timer
   const resetTimer = useCallback(() => {
     lastActivityRef.current = Date.now();
   }, []);
 
-  // Listen for user activity to reset timer
   useEffect(() => {
     const events = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
     events.forEach((event) => window.addEventListener(event, resetTimer));
@@ -85,11 +87,9 @@ export function AuthProvider({ children }) {
     };
   }, [resetTimer]);
 
-  // Check for session timeout every second
   useEffect(() => {
     const interval = setInterval(() => {
       if (currentUser && Date.now() - lastActivityRef.current > SESSION_TIMEOUT) {
-        // Auto logout after 30 min of inactivity
         signOut(auth).catch(console.error);
       }
     }, 1000);
@@ -113,7 +113,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Custom hook for consuming AuthContext
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
