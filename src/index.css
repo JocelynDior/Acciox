@@ -17,6 +17,15 @@
   --danger: #ef4444;
 }
 
+/* ---- Animated Gradient Background ---- */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  25%  { background-position: 100% 50%; }
+  50%  { background-position: 100% 0%; }
+  75%  { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* ---- Full-bleed reset (fixes white edges) ---- */
 html, body, #root {
   margin: 0;
@@ -24,7 +33,6 @@ html, body, #root {
   width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
-  background: var(--bg-dark);
 }
 
 /* ---- Global Reset ---- */
@@ -41,7 +49,18 @@ html {
 }
 
 body {
-  background: var(--bg-dark);
+  background: linear-gradient(
+    135deg,
+    #0f0a1a,
+    #4c1d95,
+    #7e22ce,
+    #c026d3,
+    #e879f9,
+    #7e22ce,
+    #0f0a1a
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 12s ease infinite;
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
