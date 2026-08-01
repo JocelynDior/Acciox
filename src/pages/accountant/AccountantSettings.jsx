@@ -43,7 +43,7 @@ export default function AccountantSettings() {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [profile, setProfile] = useState({ fullName: '', email: '' });
+  const [profile, setProfile] = useState({ fullName: '', email: '', accountantRole: '' }); // added accountantRole
   const [pw, setPw] = useState({ current: '', new: '', confirm: '' });
   const [notifPrefs, setNotifPrefs] = useState({
     newTx: true, lowConfidence: true, syncErrors: true,
@@ -63,7 +63,7 @@ export default function AccountantSettings() {
     const unsub = onSnapshot(doc(db, 'users', currentUser.uid), (snap) => {
       if (snap.exists()) {
         const d = snap.data();
-        setProfile({ fullName: d.fullName || '', email: d.email || currentUser.email });
+        setProfile({ fullName: d.fullName || '', email: d.email || currentUser.email, accountantRole: d.accountantRole || '' });
         setNotifPrefs(d.notifPrefs || notifPrefs);
         setAiPrefs(d.aiPrefs || aiPrefs);
       }
@@ -73,7 +73,10 @@ export default function AccountantSettings() {
 
   const handleSaveProfile = async () => {
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { fullName: profile.fullName });
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        fullName: profile.fullName,
+        accountantRole: profile.accountantRole,
+      });
       toast.success('Profile saved');
     } catch (e) { toast.error(e.message); }
   };
@@ -117,6 +120,19 @@ export default function AccountantSettings() {
               <div style={{ flex: 1 }}>
                 <input value={profile.fullName} onChange={e => setProfile(p => ({ ...p, fullName: e.target.value }))} style={inputStyle} placeholder="Full Name" />
                 <input value={profile.email} readOnly style={{ ...inputStyle, opacity: 0.6 }} placeholder="Email" />
+                {/* Accountant Role Dropdown */}
+                <select
+                  value={profile.accountantRole}
+                  onChange={e => setProfile(p => ({ ...p, accountantRole: e.target.value }))}
+                  style={{ ...inputStyle, marginBottom: 0 }}
+                >
+                  <option value="">Select Role</option>
+                  <option value="Bookkeeper">Bookkeeper</option>
+                  <option value="Chartered Accountant">Chartered Accountant</option>
+                  <option value="Financial Advisor">Financial Advisor</option>
+                  <option value="Auditor">Auditor</option>
+                  <option value="Tax Consultant">Tax Consultant</option>
+                </select>
               </div>
             </div>
             <button onClick={handleSaveProfile} style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 12, color: '#fff', padding: '12px 24px', fontWeight: 600, cursor: 'pointer', marginTop: 12 }}>Save Profile</button>
