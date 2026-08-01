@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const containerStyle = {
-  background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
+  background: 'transparent',
   minHeight: '100vh',
   padding: '60px 20px',
   display: 'flex',
