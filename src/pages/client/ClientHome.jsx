@@ -5,23 +5,13 @@ import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
-  FiEye, FiDollarSign, FiTrendingUp, FiTrendingDown, FiClock, FiFileText, FiMessageSquare, FiFile,
+  FiEye, FiDollarSign, FiTrendingUp, FiTrendingDown, FiFileText, FiMessageSquare, FiFile, FiPieChart,
 } from 'react-icons/fi';
 
 const pageWrapper = {
   background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
   minHeight: '100vh',
   display: 'flex',
-};
-const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1 };
-const mobileMain = { ...mainContent, marginLeft: 0 };
-const card = {
-  background: 'rgba(255,255,255,0.08)',
-  backdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255,255,255,0.15)',
-  borderRadius: 16,
-  padding: 20,
-  color: '#fff',
 };
 
 export default function ClientHome() {
@@ -52,28 +42,58 @@ export default function ClientHome() {
   const revenue = monthlyTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const expenses = monthlyTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const net = revenue - expenses;
-  const pending = monthlyTx.filter(t => t.status === 'pending').length;
+  // pending variable removed, not used
+
+  // dynamic main content style
+  const mainContent = {
+    marginLeft: isMobile ? 0 : 260,
+    padding: isMobile ? '80px 16px 40px' : '80px 24px 40px',
+    flex: 1,
+  };
+
+  // grid: 4 cols desktop, 2 cols mobile
+  const gridStyle = {
+    display: 'grid',
+    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+    gap: 16,
+    marginBottom: 32,
+  };
+
+  // card style with reduced padding on mobile
+  const card = {
+    background: 'rgba(255,255,255,0.08)',
+    backdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255,255,255,0.15)',
+    borderRadius: 16,
+    padding: isMobile ? 12 : 20,
+    color: '#fff',
+  };
+
+  const h2Style = {
+    fontSize: isMobile ? '1.2rem' : '1.5rem',
+    margin: '8px 0 4px',
+  };
 
   return (
     <>
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={mainContent}>
           <div style={{ marginBottom: 28 }}>
             <h1 style={{ color: '#fff' }}>Welcome, {currentUser?.displayName || 'Client'}</h1>
             <span style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: 20, color: '#fff', fontSize: '0.85rem' }}>👁️ View Only Access</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
-            <div style={card}><FiDollarSign color="#c026d3" /><h2>R {revenue.toFixed(2)}</h2><p>Revenue this month</p></div>
-            <div style={card}><FiTrendingDown color="#ef4444" /><h2>R {expenses.toFixed(2)}</h2><p>Expenses this month</p></div>
-            <div style={card}><FiTrendingUp color={net >= 0 ? '#22c55e' : '#ef4444'} /><h2>R {net.toFixed(2)}</h2><p>Net Profit</p></div>
-            <div style={card}><FiClock color="#f59e0b" /><h2>{pending}</h2><p>Pending</p></div>
+          <div style={gridStyle}>
+            <div style={card}><FiDollarSign color="#c026d3" size={20} /><h2 style={h2Style}>R {revenue.toFixed(2)}</h2><p>Revenue this month</p></div>
+            <div style={card}><FiTrendingDown color="#ef4444" size={20} /><h2 style={h2Style}>R {expenses.toFixed(2)}</h2><p>Expenses this month</p></div>
+            <div style={card}><FiTrendingUp color={net >= 0 ? '#22c55e' : '#ef4444'} size={20} /><h2 style={h2Style}>R {net.toFixed(2)}</h2><p>Net Profit</p></div>
+            <div style={card}><FiPieChart color="#f59e0b" size={20} /><h2 style={h2Style}>R 0.00</h2><p>Tax</p></div>
           </div>
 
           <h3 style={{ color: '#fff', marginBottom: 16 }}>Recent Transactions</h3>
-          <div style={card}>
+          <div style={{ ...card, padding: isMobile ? 12 : 20 }}>
             {monthlyTx.slice(0, 5).map(tx => (
               <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 <span>{tx.description}</span><span>R {parseFloat(tx.amount || 0).toFixed(2)}</span>
@@ -81,7 +101,7 @@ export default function ClientHome() {
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
             <Link to="/client/reports" style={{ ...card, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}><FiFileText /> View Reports</Link>
             <Link to="/client/chat" style={{ ...card, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}><FiMessageSquare /> Open Chat</Link>
             <Link to={'/company/' + companyId + '/invoices'} style={{ ...card, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}><FiFile /> View Invoices</Link>
