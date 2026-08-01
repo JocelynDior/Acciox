@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { db, collection, onSnapshot, query, where, doc } from '../../firebase';
 import { useParams, Link } from 'react-router-dom';
-import { RevenueLineChart } from '../../components/ReportCharts';
-import AIIndicator from '../../components/AIIndicator';
-import { toast } from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
-import { FiDollarSign, FiTrendingUp, FiTrendingDown, FiFileText, FiPlus, FiUpload, FiPieChart } from 'react-icons/fi';
+import AIIndicator from '../../components/AIIndicator';
+import { RevenueLineChart } from '../../components/ReportCharts';
+import { toast } from 'react-hot-toast';
+import {
+  FiDollarSign, FiTrendingUp, FiTrendingDown, FiFileText,
+  FiPlus, FiUpload, FiPieChart,
+} from 'react-icons/fi';
 
 const pageWrapper = {
   background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
@@ -21,6 +25,7 @@ const card = {
 
 export default function CompanyDashboard() {
   const { companyId } = useParams();
+  const { userRole } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [company, setCompany] = useState(null);
@@ -44,14 +49,18 @@ export default function CompanyDashboard() {
   useEffect(() => {
     if (!companyId) return;
     const q = query(collection(db, 'transactions'), where('companyId', '==', companyId));
-    const unsub = onSnapshot(q, snap => setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsub = onSnapshot(q, snap =>
+      setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
     return () => unsub();
   }, [companyId]);
 
   useEffect(() => {
     if (!companyId) return;
     const q = query(collection(db, 'expenses'), where('companyId', '==', companyId));
-    const unsub = onSnapshot(q, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsub = onSnapshot(q, snap =>
+      setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
     return () => unsub();
   }, [companyId]);
 
@@ -61,8 +70,13 @@ export default function CompanyDashboard() {
     const d = new Date(tx.createdAt.seconds * 1000);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
-  const revenue = monthlyTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
-  const totalExpenses = monthlyTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+
+  const revenue = monthlyTx
+    .filter(t => t.type === 'income')
+    .reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+  const totalExpenses = monthlyTx
+    .filter(t => t.type === 'expense')
+    .reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const netProfit = revenue - totalExpenses;
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
@@ -82,9 +96,16 @@ export default function CompanyDashboard() {
     <>
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} companyId={companyId} companyName={company?.companyName} />
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          companyId={companyId}
+          companyName={company?.companyName}
+        />
         <main style={mainContent}>
-          <h1 style={{ color: '#fff', marginBottom: 8 }}>{company?.companyName || 'Company Dashboard'}</h1>
+          <h1 style={{ color: '#fff', marginBottom: 8 }}>
+            {company?.companyName || 'Company Dashboard'}
+          </h1>
 
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
@@ -100,7 +121,9 @@ export default function CompanyDashboard() {
             </div>
             <div style={card}>
               <FiTrendingUp color={netProfit >= 0 ? '#22c55e' : '#ef4444'} size={24} />
-              <h2 style={{ margin: '8px 0', color: netProfit >= 0 ? '#22c55e' : '#ef4444' }}>R {netProfit.toFixed(2)}</h2>
+              <h2 style={{ margin: '8px 0', color: netProfit >= 0 ? '#22c55e' : '#ef4444' }}>
+                R {netProfit.toFixed(2)}
+              </h2>
               <p style={{ color: 'rgba(255,255,255,0.7)', margin: 0 }}>Net Profit/Loss</p>
             </div>
             <div style={card}>
@@ -145,17 +168,28 @@ export default function CompanyDashboard() {
             )}
           </div>
 
-          <div style={{ marginBottom: 24 }}><AIIndicator /></div>
+          <div style={{ marginBottom: 24 }}>
+            <AIIndicator />
+          </div>
 
           {/* Quick Actions */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Link to={'/company/' + companyId + '/transactions'} style={{ background: 'linear-gradient(135deg,#7e22ce,#c026d3)', border: 'none', borderRadius: 12, color: '#fff', padding: '12px 24px', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link
+              to={'/company/' + companyId + '/transactions'}
+              style={{ background: 'linear-gradient(135deg,#7e22ce,#c026d3)', border: 'none', borderRadius: 12, color: '#fff', padding: '12px 24px', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}
+            >
               <FiPlus /> Add Transaction
             </Link>
-            <button onClick={() => toast('Upload receipt coming soon')} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '12px 24px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => toast('Upload receipt coming soon')}
+              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '12px 24px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+            >
               <FiUpload /> Upload Receipt
             </button>
-            <Link to={'/company/' + companyId + '/reports'} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '12px 24px', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link
+              to={'/company/' + companyId + '/reports'}
+              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, color: '#fff', padding: '12px 24px', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}
+            >
               <FiFileText /> Generate Report
             </Link>
           </div>
