@@ -48,16 +48,15 @@ export default function GroupChat() {
     });
   }, [companyId]);
 
-  // Fetch messages
+  // Fetch messages - updated path
   useEffect(() => {
     if (!companyId) return;
-    const path = 'chats/' + companyId + '/group/messages';
+    const path = 'groupChats/' + companyId + '/messages';
     const q = query(collection(db, path), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, async (snap) => {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setMessages(msgs);
 
-      // Fetch sender data for unknown senders
       const unknownIds = [...new Set(msgs.map(m => m.senderId))].filter(id => !senderData[id]);
       if (unknownIds.length > 0) {
         const newData = { ...senderData };
@@ -80,7 +79,7 @@ export default function GroupChat() {
   const sendMessage = async () => {
     if (!newMsg.trim()) return;
     try {
-      const path = 'chats/' + companyId + '/group/messages';
+      const path = 'groupChats/' + companyId + '/messages';
       await addDoc(collection(db, path), {
         text: newMsg.trim(),
         senderId: currentUser.uid,
@@ -92,7 +91,6 @@ export default function GroupChat() {
     } catch (err) { console.error('Failed to send', err); }
   };
 
-  // Client read-only check
   const isReadOnly = userRole === 'client';
 
   const mainStyle = {
