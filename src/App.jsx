@@ -45,6 +45,7 @@ const AIChat = lazy(() => import('./pages/chat/AIChat'));
 const ClientHome = lazy(() => import('./pages/client/ClientHome'));
 const ClientChat = lazy(() => import('./pages/client/ClientChat'));
 const ClientReports = lazy(() => import('./pages/client/ClientReports'));
+const FinancialAdvice = lazy(() => import('./pages/client/FinancialAdvice')); // <-- new import
 
 const Loader = () => (
   <div style={{
@@ -106,6 +107,7 @@ function App() {
             <Route path="/client" element={<RoleGuard allowedRoles={['client']}><ClientHome /></RoleGuard>} />
             <Route path="/client/reports" element={<RoleGuard allowedRoles={['client']}><ClientReports /></RoleGuard>} />
             <Route path="/client/chat" element={<RoleGuard allowedRoles={['client']}><ClientChat /></RoleGuard>} />
+            <Route path="/client/financial-advice" element={<RoleGuard allowedRoles={['client']}><FinancialAdvice /></RoleGuard>} />  {/* new route */}
 
             {/* Catch all */}
             <Route path="*" element={<Navigate to="/login" />} />
