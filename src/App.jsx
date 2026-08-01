@@ -36,17 +36,21 @@ const TaxManagement = lazy(() => import('./pages/company/TaxManagement'));
 const Reconciliation = lazy(() => import('./pages/company/Reconciliation'));
 
 // Chat
+const ChatHub = lazy(() => import('./pages/chat/ChatHub'));
 const GroupChat = lazy(() => import('./pages/chat/GroupChat'));
 const PrivateChat = lazy(() => import('./pages/chat/PrivateChat'));
 const AIChat = lazy(() => import('./pages/chat/AIChat'));
-const ClientChat = lazy(() => import('./pages/client/ClientChat'));
 
 // Client
 const ClientHome = lazy(() => import('./pages/client/ClientHome'));
+const ClientChat = lazy(() => import('./pages/client/ClientChat'));
 const ClientReports = lazy(() => import('./pages/client/ClientReports'));
 
 const Loader = () => (
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0f0a1a', color: 'white', fontSize: '18px' }}>
+  <div style={{
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    height: '100vh', background: '#0f0a1a', color: 'white', fontSize: '18px',
+  }}>
     Loading Acciox...
   </div>
 );
@@ -58,6 +62,7 @@ function App() {
         <Toaster position="top-right" />
         <Suspense fallback={<Loader />}>
           <Routes>
+
             {/* Public */}
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
@@ -67,11 +72,10 @@ function App() {
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
 
-            {/* Shared */}
+            {/* Shared - all roles */}
             <Route path="/settings" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><Settings /></RoleGuard>} />
             <Route path="/more-info" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><MoreInfo /></RoleGuard>} />
-
-            {/* Chat - standalone (no companyId) */}
+            <Route path="/chat" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><ChatHub /></RoleGuard>} />
             <Route path="/chat/private" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><PrivateChat /></RoleGuard>} />
             <Route path="/chat/ai" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><AIChat /></RoleGuard>} />
 
@@ -86,16 +90,16 @@ function App() {
             <Route path="/accountant/queue" element={<RoleGuard allowedRoles={['accountant']}><TransactionQueue /></RoleGuard>} />
             <Route path="/accountant/sync" element={<RoleGuard allowedRoles={['accountant']}><SyncManager /></RoleGuard>} />
 
-            {/* Company workspace */}
+            {/* Company workspace - admin + accountant + client (read only) */}
             <Route path="/company/:companyId/dashboard" element={<RoleGuard allowedRoles={['admin', 'accountant']}><CompanyDashboard /></RoleGuard>} />
             <Route path="/company/:companyId/transactions" element={<RoleGuard allowedRoles={['admin', 'accountant']}><Transactions /></RoleGuard>} />
             <Route path="/company/:companyId/expenses" element={<RoleGuard allowedRoles={['admin', 'accountant']}><StaffExpenses /></RoleGuard>} />
             <Route path="/company/:companyId/payroll" element={<RoleGuard allowedRoles={['admin', 'accountant']}><Payroll /></RoleGuard>} />
             <Route path="/company/:companyId/reports" element={<RoleGuard allowedRoles={['admin', 'accountant']}><Reports /></RoleGuard>} />
             <Route path="/company/:companyId/invoices" element={<RoleGuard allowedRoles={['admin', 'accountant']}><InvoiceManager /></RoleGuard>} />
-            <Route path="/company/:companyId/accounts" element={<RoleGuard allowedRoles={['admin', 'accountant']}><AccountManagement /></RoleGuard>} />
-            <Route path="/company/:companyId/tax" element={<RoleGuard allowedRoles={['admin', 'accountant']}><TaxManagement /></RoleGuard>} />
-            <Route path="/company/:companyId/reconciliation" element={<RoleGuard allowedRoles={['admin', 'accountant']}><Reconciliation /></RoleGuard>} />
+            <Route path="/company/:companyId/accounts" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><AccountManagement /></RoleGuard>} />
+            <Route path="/company/:companyId/tax" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><TaxManagement /></RoleGuard>} />
+            <Route path="/company/:companyId/reconciliation" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><Reconciliation /></RoleGuard>} />
             <Route path="/company/:companyId/chat/group" element={<RoleGuard allowedRoles={['admin', 'accountant', 'client']}><GroupChat /></RoleGuard>} />
 
             {/* Client */}
@@ -103,7 +107,9 @@ function App() {
             <Route path="/client/reports" element={<RoleGuard allowedRoles={['client']}><ClientReports /></RoleGuard>} />
             <Route path="/client/chat" element={<RoleGuard allowedRoles={['client']}><ClientChat /></RoleGuard>} />
 
+            {/* Catch all */}
             <Route path="*" element={<Navigate to="/login" />} />
+
           </Routes>
         </Suspense>
       </AuthProvider>
