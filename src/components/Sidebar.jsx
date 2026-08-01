@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   FiHome, FiUsers, FiSettings, FiBriefcase, FiList, FiRefreshCw,
   FiDollarSign, FiFileText, FiPieChart, FiMessageSquare, FiCpu,
-  FiCreditCard, FiInfo, FiShield,
+  FiCreditCard, FiInfo, FiShield, FiTrendingUp,
 } from 'react-icons/fi';
 
 const sidebarBase = {
@@ -84,6 +84,7 @@ export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
     { to: '/client', label: 'My Company', icon: <FiHome size={16} /> },
     { to: '/client/reports', label: 'Reports', icon: <FiPieChart size={16} /> },
     { to: '/client/chat', label: 'Chat', icon: <FiMessageSquare size={16} /> },
+    { to: '/client/financial-advice', label: 'Financial Advice', icon: <FiTrendingUp size={16} /> },  // <-- new entry
     { to: '/settings', label: 'Settings', icon: <FiSettings size={16} /> },
     { to: '/more-info', label: 'More Info', icon: <FiInfo size={16} /> },
   ];
