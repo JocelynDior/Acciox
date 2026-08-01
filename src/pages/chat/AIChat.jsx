@@ -7,7 +7,7 @@ import { FiCpu, FiSend } from 'react-icons/fi';
 const SERVER_URL = 'https://accioxserver.onrender.com';
 
 const pageWrapper = {
-  background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
+  background: 'transparent',
   minHeight: '100vh', display: 'flex', flexDirection: 'column',
   fontFamily: "'Inter', system-ui, sans-serif",
 };
