@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { FiRefreshCw } from 'react-icons/fi';
 
 const pageWrapper = {
@@ -22,8 +23,10 @@ const card = {
 
 export default function Reconciliation() {
   const { companyId } = useParams();
+  const { userRole } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const isReadOnly = userRole === 'client';
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -43,9 +46,14 @@ export default function Reconciliation() {
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} companyId={companyId} />
         <main style={mainContent}>
-          <h1 style={{ ...gradientTitle, fontSize: '1.8rem', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FiRefreshCw /> Reconciliation
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+            <h1 style={{ ...gradientTitle, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: 10, margin: 0 }}>
+              <FiRefreshCw /> Reconciliation
+            </h1>
+            {isReadOnly && (
+              <span style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: '4px 14px', color: '#fff', fontSize: '0.8rem' }}>👁️ View Only</span>
+            )}
+          </div>
           <div style={card}>
             <FiRefreshCw size={48} color="#c026d3" style={{ marginBottom: 16 }} />
             <h2 style={{ marginBottom: 12 }}>Account Reconciliation</h2>
