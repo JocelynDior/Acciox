@@ -12,6 +12,7 @@ import {
   query,
   where,
   orderBy,
+  limit,               // ← added
   onSnapshot,
   addDoc,
   serverTimestamp,
@@ -51,6 +52,7 @@ export {
   query,
   where,
   orderBy,
+  limit,               // ← added
   onSnapshot,
   addDoc,
   serverTimestamp,
