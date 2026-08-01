@@ -8,7 +8,7 @@ import { FiEye, FiDownload, FiFileText } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 const pageWrapper = {
-  background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
+  background: 'transparent',
   minHeight: '100vh', display: 'flex',
 };
 const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1 };
