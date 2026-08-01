@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import { FiBriefcase, FiSearch, FiPlus, FiCheck, FiTrash2, FiEye, FiLink } from 'react-icons/fi';
+import { arrayUnion } from 'firebase/firestore'; // <-- added import
 
 const pageWrapper = {
   background: 'linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #2d1b4e 100%)',
@@ -42,13 +43,16 @@ export default function CompanyManagement() {
   const { currentUser } = useAuth();
   const [companies, setCompanies] = useState([]);
   const [clients, setClients] = useState([]);
+  const [accountants, setAccountants] = useState([]); // new state
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [modalOpen, setModalOpen] = useState(false);
   const [linkModal, setLinkModal] = useState({ show: false, company: null });
+  const [linkAccountantModal, setLinkAccountantModal] = useState({ show: false, company: null }); // new modal state
   const [selectedClientId, setSelectedClientId] = useState('');
+  const [selectedAccountantId, setSelectedAccountantId] = useState(''); // new state
   const [confirm, setConfirm] = useState({ show: false, type: '', company: null });
   const [form, setForm] = useState({
     companyName: '', ownerName: '', ownerEmail: '', industry: '', description: '',
@@ -71,6 +75,15 @@ export default function CompanyManagement() {
     const q = query(collection(db, 'users'), where('role', '==', 'client'));
     const unsub = onSnapshot(q, snap => {
       setClients(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch all accountants
+  useEffect(() => {
+    const q = query(collection(db, 'users'), where('role', '==', 'accountant'));
+    const unsub = onSnapshot(q, snap => {
+      setAccountants(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return () => unsub();
   }, []);
@@ -136,6 +149,19 @@ export default function CompanyManagement() {
     } catch (err) { toast.error('Failed to link client: ' + err.message); }
   };
 
+  const handleLinkAccountant = async () => {
+    if (!selectedAccountantId) return toast.error('Please select an accountant.');
+    try {
+      await updateDoc(doc(db, 'companies', linkAccountantModal.company.id), {
+        assignedAccountantIds: arrayUnion(selectedAccountantId),
+      });
+      toast.success('Accountant linked to company!');
+      logAudit('LINK_ACCOUNTANT', linkAccountantModal.company.companyName);
+      setLinkAccountantModal({ show: false, company: null });
+      setSelectedAccountantId('');
+    } catch (err) { toast.error('Failed to link accountant: ' + err.message); }
+  };
+
   const mainContent = {
     marginLeft: isMobile ? 0 : 260,
     padding: isMobile ? '80px 16px 40px' : '80px 24px 40px',
@@ -192,7 +218,10 @@ export default function CompanyManagement() {
                     <button onClick={() => setConfirm({ show: true, type: 'verify', company })} style={{ background: 'none', border: 'none', color: '#22c55e', cursor: 'pointer', fontSize: '1.2rem' }}><FiCheck /></button>
                   )}
                   {company.status === 'verified' && (
-                    <button onClick={() => { setLinkModal({ show: true, company }); setSelectedClientId(''); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '1.2rem' }} title="Link client to company"><FiLink /></button>
+                    <>
+                      <button onClick={() => { setLinkModal({ show: true, company }); setSelectedClientId(''); }} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '1.2rem' }} title="Link client to company"><FiLink /></button>
+                      <button onClick={() => { setLinkAccountantModal({ show: true, company }); setSelectedAccountantId(''); }} style={{ background: 'none', border: 'none', color: '#22c55e', cursor: 'pointer', fontSize: '1.2rem' }} title="Link accountant to company"><FiLink /></button>
+                    </>
                   )}
                   <button onClick={() => setConfirm({ show: true, type: 'delete', company })} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1.2rem' }}><FiTrash2 /></button>
                 </div>
@@ -234,6 +263,28 @@ export default function CompanyManagement() {
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                   <button onClick={() => setLinkModal({ show: false, company: null })} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>Cancel</button>
                   <button onClick={handleLinkClient} style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 10, padding: '10px 20px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Link Client</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Link Accountant Modal */}
+          {linkAccountantModal.show && (
+            <div style={modalOverlay} onClick={() => setLinkAccountantModal({ show: false, company: null })}>
+              <div style={modalCard} onClick={e => e.stopPropagation()}>
+                <h2 style={{ marginBottom: 8, ...gradientTitle, fontSize: '1.3rem' }}>Link Accountant to Company</h2>
+                <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 20, fontSize: '0.9rem' }}>
+                  Assign an accountant to <strong>{linkAccountantModal.company?.companyName}</strong> for financial management.
+                </p>
+                <select value={selectedAccountantId} onChange={e => setSelectedAccountantId(e.target.value)} style={{ ...inputStyle, marginBottom: 20 }}>
+                  <option value="">Select an accountant...</option>
+                  {accountants.map(a => (
+                    <option key={a.id} value={a.id}>{a.fullName || a.email} ({a.email})</option>
+                  ))}
+                </select>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                  <button onClick={() => setLinkAccountantModal({ show: false, company: null })} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={handleLinkAccountant} style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 10, padding: '10px 20px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Link Accountant</button>
                 </div>
               </div>
             </div>
