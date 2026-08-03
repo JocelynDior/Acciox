@@ -153,6 +153,7 @@ const getSettingsPath = (role) => {
   switch (role) {
     case 'admin': return '/admin/settings';
     case 'accountant': return '/accountant/settings';
+    case 'agent': return '/accountant/settings';
     case 'client': return '/client/settings';
     default: return '/';
   }
@@ -187,8 +188,14 @@ export default function Navbar({ onMenuClick }) {
   };
 
   // Determine role label and badge color
-  const roleLabel = userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : '';
-  const badgeColor = userRole === 'admin' ? '#c026d3' : userRole === 'accountant' ? '#7e22ce' : '#3b82f6';
+  const getRoleLabel = () => {
+    if (userRole === 'accountant' || userRole === 'agent') return 'Agent';
+    if (userRole) return userRole.charAt(0).toUpperCase() + userRole.slice(1);
+    return '';
+  };
+  
+  const roleLabel = getRoleLabel();
+  const badgeColor = (userRole === 'accountant' || userRole === 'agent') ? '#7e22ce' : userRole === 'admin' ? '#c026d3' : '#3b82f6';
   const badgeStyle = {
     background: badgeColor,
     color: '#fff',
