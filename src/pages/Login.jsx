@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth, db, doc, getDoc } from '../firebase';
 import { toast } from 'react-hot-toast';
 
-// ---- Inline Styles ----
+// ---- Inline Styles (unchanged) ----
 const pageStyle = {
   background: 'transparent',
   minHeight: '100vh',
@@ -26,7 +26,7 @@ const cardStyle = {
   width: '100%',
   color: '#fff',
   boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-  animation: 'fadeIn 0.7s ease forwards', // global fadeIn
+  animation: 'fadeIn 0.7s ease forwards',
 };
 
 const logoStyle = {
@@ -151,7 +151,38 @@ const spinnerStyle = {
   borderRadius: '50%',
   border: '2px solid rgba(255,255,255,0.3)',
   borderTopColor: '#fff',
-  animation: 'spin 0.7s linear infinite', // global spin
+  animation: 'spin 0.7s linear infinite',
+};
+
+// ---- Rate limiting helpers ----
+const getRateLimitKey = (email) => `rl_${email.toLowerCase()}`;
+
+const getRateLimitData = (email) => {
+  if (!email) return null;
+  const raw = localStorage.getItem(getRateLimitKey(email));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    // Validate shape
+    if (
+      typeof parsed.attempts === 'number' &&
+      typeof parsed.lastFailure === 'number' &&
+      typeof parsed.blockDuration === 'number'
+    ) {
+      return parsed;
+    }
+  } catch (e) {
+    // ignore corrupt data
+  }
+  return null;
+};
+
+const saveRateLimitData = (email, data) => {
+  localStorage.setItem(getRateLimitKey(email), JSON.stringify(data));
+};
+
+const clearRateLimitData = (email) => {
+  localStorage.removeItem(getRateLimitKey(email));
 };
 
 export default function Login() {
@@ -161,15 +192,62 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [attempts, setAttempts] = useState(0);
-  const tooManyAttempts = attempts >= 5;
+
+  // Rate limiting state
+  const [rateLimit, setRateLimit] = useState(null); // { attempts, lastFailure, blockDuration }
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const intervalRef = useRef(null);
+
+  // Derive blocked status and blockedUntil from rateLimit
+  const isBlocked =
+    rateLimit &&
+    rateLimit.attempts >= 10 &&
+    Date.now() < rateLimit.lastFailure + rateLimit.blockDuration;
+
+  const blockedUntil =
+    isBlocked ? rateLimit.lastFailure + rateLimit.blockDuration : null;
+
+  // Load rate limit data when email changes
+  useEffect(() => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
+      setRateLimit(null);
+      return;
+    }
+    const data = getRateLimitData(trimmed);
+    setRateLimit(data);
+  }, [email]);
+
+  // Countdown timer when blocked
+  useEffect(() => {
+    if (isBlocked && blockedUntil) {
+      const updateRemaining = () => {
+        const now = Date.now();
+        const diff = Math.max(0, Math.ceil((blockedUntil - now) / 1000));
+        setRemainingSeconds(diff);
+      };
+      updateRemaining();
+      intervalRef.current = setInterval(updateRemaining, 1000);
+      return () => {
+        clearInterval(intervalRef.current);
+      };
+    } else {
+      setRemainingSeconds(0);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+  }, [isBlocked, blockedUntil]);
+
+  const formatCountdown = (totalSeconds) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (tooManyAttempts) {
-      toast.error('Too many attempts. Please try again later.');
-      return;
-    }
 
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail || !password) {
@@ -177,9 +255,18 @@ export default function Login() {
       return;
     }
 
+    if (isBlocked) {
+      // Already blocked, don't allow submission
+      return;
+    }
+
     setLoading(true);
     try {
       const userCred = await signInWithEmailAndPassword(auth, trimmedEmail, password);
+      // Successful login – clear rate limit for this email
+      clearRateLimitData(trimmedEmail);
+      setRateLimit(null);
+
       // Fetch user role and status from Firestore
       const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
       if (userDoc.exists()) {
@@ -189,6 +276,7 @@ export default function Login() {
             navigate('/admin', { replace: true });
             break;
           case 'accountant':
+          case 'agent':
             navigate('/accountant', { replace: true });
             break;
           case 'client':
@@ -199,22 +287,39 @@ export default function Login() {
             navigate('/', { replace: true });
         }
       } else {
-        // Fallback if user doc missing
         navigate('/', { replace: true });
       }
-      setAttempts(0); // reset attempts on success
     } catch (error) {
-      setAttempts((prev) => prev + 1);
-      const remaining = 5 - (attempts + 1);
-      if (remaining <= 0) {
-        toast.error('Too many attempts. Please try again later.');
-      } else {
-        const msg =
-          error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found'
-            ? `Invalid email or password. ${remaining} attempts left.`
-            : error.message;
-        toast.error(msg);
+      // Update rate limit on failure
+      const existing = getRateLimitData(trimmedEmail) || { attempts: 0, lastFailure: 0, blockDuration: 60000 };
+      const newAttempts = existing.attempts + 1;
+      let newBlockDuration = existing.blockDuration;
+
+      if (newAttempts === 10) {
+        // First time reaching 10 attempts → start with 1 minute
+        newBlockDuration = 60000;
+      } else if (newAttempts > 10 && existing.attempts >= 10) {
+        // Already blocked before, and block has expired (they waited and tried again)
+        if (Date.now() > existing.lastFailure + existing.blockDuration) {
+          newBlockDuration = existing.blockDuration * 2;
+        }
+        // If still in the previous block period, don't double (they shouldn't be able to submit,
+        // but just in case they bypass frontend, keep same blockDuration)
       }
+
+      const newData = {
+        attempts: newAttempts,
+        lastFailure: Date.now(),
+        blockDuration: newBlockDuration,
+      };
+      saveRateLimitData(trimmedEmail, newData);
+      setRateLimit(newData);
+
+      toast.error(
+        error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found'
+          ? 'Invalid email or password.'
+          : error.message
+      );
     } finally {
       setLoading(false);
     }
@@ -236,7 +341,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={inputStyle}
-              disabled={loading || tooManyAttempts}
+              disabled={loading || isBlocked}
               autoComplete="email"
             />
           </div>
@@ -250,7 +355,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={inputStyle}
-              disabled={loading || tooManyAttempts}
+              disabled={loading || isBlocked}
               autoComplete="current-password"
             />
             <button
@@ -269,19 +374,26 @@ export default function Login() {
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              disabled={loading || tooManyAttempts}
+              disabled={loading || isBlocked}
             />
             Remember me
           </label>
 
+          {/* Rate limit countdown */}
+          {isBlocked && (
+            <div style={{ color: '#ef4444', fontSize: '0.9rem', marginBottom: 16, textAlign: 'center' }}>
+              Too many attempts. Try again in {formatCountdown(remainingSeconds)}
+            </div>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
-            style={loading || tooManyAttempts ? btnDisabledStyle : btnStyle}
-            disabled={loading || tooManyAttempts}
+            style={loading || isBlocked ? btnDisabledStyle : btnStyle}
+            disabled={loading || isBlocked}
           >
             {loading ? <div style={spinnerStyle} /> : null}
-            {loading ? 'Signing in…' : tooManyAttempts ? 'Too many attempts' : 'Sign In'}
+            {loading ? 'Signing in…' : isBlocked ? 'Too many attempts' : 'Sign In'}
           </button>
         </form>
 
