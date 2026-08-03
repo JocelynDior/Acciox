@@ -12,10 +12,12 @@ export function AuthProvider({ children }) {
   const [userRole, setUserRole] = useState(null);
   const [userStatus, setUserStatus] = useState(null);
   const [companyId, setCompanyId] = useState(null);
+  const [agentRole, setAgentRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const timeoutRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
+  const broadcastChannelRef = useRef(null);
 
   const fetchUserData = useCallback(async (user) => {
     if (!user) return null;
@@ -27,6 +29,7 @@ export function AuthProvider({ children }) {
           role: data.role || null,
           status: data.status || 'unverified',
           companyId: data.companyId || null,
+          agentRole: data.agentRole || null,
         };
       }
       return null;
@@ -35,6 +38,51 @@ export function AuthProvider({ children }) {
       return null;
     }
   }, []);
+
+  // BroadcastChannel for cross-tab state sync
+  useEffect(() => {
+    const channel = new BroadcastChannel('acciox_auth');
+    broadcastChannelRef.current = channel;
+
+    channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+      if (type === 'AUTH_STATE_UPDATE') {
+        setCurrentUser(payload.currentUser);
+        setUserRole(payload.userRole);
+        setUserStatus(payload.userStatus);
+        setCompanyId(payload.companyId);
+        setAgentRole(payload.agentRole);
+        setLoading(payload.loading);
+        lastActivityRef.current = Date.now();
+      }
+    };
+
+    return () => {
+      channel.close();
+    };
+  }, []);
+
+  // Broadcast state changes to other tabs
+  const broadcastState = useCallback(() => {
+    if (broadcastChannelRef.current) {
+      broadcastChannelRef.current.postMessage({
+        type: 'AUTH_STATE_UPDATE',
+        payload: {
+          currentUser,
+          userRole,
+          userStatus,
+          companyId,
+          agentRole,
+          loading,
+        },
+      });
+    }
+  }, [currentUser, userRole, userStatus, companyId, agentRole, loading]);
+
+  // Broadcast whenever auth state changes
+  useEffect(() => {
+    broadcastState();
+  }, [broadcastState]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -45,6 +93,7 @@ export function AuthProvider({ children }) {
           setUserRole(userData.role);
           setUserStatus(userData.status);
           setCompanyId(userData.companyId);
+          setAgentRole(userData.agentRole);
         } else {
           // Could not fetch user data, sign out
           await signOut(auth);
@@ -52,12 +101,14 @@ export function AuthProvider({ children }) {
           setUserRole(null);
           setUserStatus(null);
           setCompanyId(null);
+          setAgentRole(null);
         }
       } else {
         setCurrentUser(null);
         setUserRole(null);
         setUserStatus(null);
         setCompanyId(null);
+        setAgentRole(null);
       }
       setLoading(false);
       lastActivityRef.current = Date.now();
@@ -103,6 +154,7 @@ export function AuthProvider({ children }) {
     userStatus,
     loading,
     companyId,
+    agentRole,
     logout,
   };
 
