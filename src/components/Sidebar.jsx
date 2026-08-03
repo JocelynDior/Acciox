@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -42,6 +42,15 @@ export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
   const { userRole, companyId: userCompanyId } = useAuth();
   const location = useLocation();
   const effectiveCompanyId = companyId || userCompanyId;
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth > 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
@@ -52,7 +61,7 @@ export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
         key={item.to}
         to={item.to}
         style={{ ...linkStyleBase, ...(active ? linkActiveStyle : {}) }}
-        onClick={onClose}
+        onClick={!isDesktop ? onClose : undefined}
         onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; } }}
         onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; } }}
       >
@@ -84,7 +93,7 @@ export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
     { to: '/client', label: 'My Company', icon: <FiHome size={16} /> },
     { to: '/client/reports', label: 'Reports', icon: <FiPieChart size={16} /> },
     { to: '/client/chat', label: 'Chat', icon: <FiMessageSquare size={16} /> },
-    { to: '/client/financial-advice', label: 'Financial Advice', icon: <FiTrendingUp size={16} /> },  // <-- new entry
+    { to: '/client/financial-advice', label: 'Financial Advice', icon: <FiTrendingUp size={16} /> },
     { to: '/settings', label: 'Settings', icon: <FiSettings size={16} /> },
     { to: '/more-info', label: 'More Info', icon: <FiInfo size={16} /> },
   ];
@@ -109,15 +118,26 @@ export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
     { to: '/company/' + companyId + '/chat/ai', label: 'AI Chat', icon: <FiCpu size={16} /> },
   ] : [];
 
-  const mainLinks = userRole === 'admin' ? adminLinks : userRole === 'accountant' ? accountantLinks : clientLinks;
+  const mainLinks = userRole === 'admin' ? adminLinks : (userRole === 'accountant' || userRole === 'agent') ? accountantLinks : clientLinks;
+
+  const getMenuLabel = () => {
+    if (userRole === 'admin') return 'admin menu';
+    if (userRole === 'accountant' || userRole === 'agent') return 'agent menu';
+    return userRole + ' menu';
+  };
+
+  const sidebarTransform = () => {
+    if (isDesktop) return 'none';
+    return isOpen ? 'translateX(0)' : 'translateX(-100%)';
+  };
 
   return (
     <>
-      {isOpen && <div style={overlayStyle} onClick={onClose} />}
-      <nav style={{ ...sidebarBase, transform: isOpen ? 'translateX(0)' : 'translateX(-100%)' }}>
+      {!isDesktop && isOpen && <div style={overlayStyle} onClick={onClose} />}
+      <nav style={{ ...sidebarBase, transform: sidebarTransform() }}>
 
         {/* Main Menu */}
-        <div style={sectionTitleStyle}>{userRole} menu</div>
+        <div style={sectionTitleStyle}>{getMenuLabel()}</div>
         {mainLinks.map(renderLink)}
 
         {/* Client company links */}
@@ -128,7 +148,7 @@ export default function Sidebar({ isOpen, onClose, companyId, companyName }) {
           </>
         )}
 
-        {/* Company workspace links (admin/accountant) */}
+        {/* Company workspace links (admin/agent) */}
         {companyLinks.length > 0 && (
           <>
             <div style={sectionTitleStyle}>Company Workspace</div>
