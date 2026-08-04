@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   db, collection, onSnapshot, addDoc, updateDoc, doc, serverTimestamp,
-  query, where, orderBy,
+  query, where, orderBy, deleteDoc,
 } from '../../firebase';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -16,7 +16,7 @@ const pageWrapper = {
   minHeight: '100vh', display: 'flex',
   fontFamily: "'Inter', system-ui, sans-serif",
 };
-const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1 };
+const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1, transition: 'margin 0.3s' };
 const mobileMain = { ...mainContent, marginLeft: 0 };
 const card = {
   background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)',
@@ -28,6 +28,8 @@ const tabStyle = (active) => ({
   background: active ? 'linear-gradient(135deg, #7e22ce, #c026d3)' : 'transparent',
   color: '#fff', fontWeight: 600, fontSize: '0.85rem', marginRight: 8,
 });
+
+const inputStyle = { background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:10, padding:12, color:'#fff', outline:'none' };
 
 export default function InvoiceManager() {
   const { companyId } = useParams();
@@ -179,4 +181,3 @@ export default function InvoiceManager() {
     </>
   );
 }
-const inputStyle = { background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:10, padding:12, color:'#fff', outline:'none' };
