@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  db, collection, onSnapshot, updateDoc, doc, serverTimestamp, query, where, orderBy,
+  db, collection, onSnapshot, updateDoc, doc, serverTimestamp, query, where, orderBy, addDoc,
 } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import { categorizeTransaction } from '../../services/aiOrchestrator';
@@ -17,7 +17,7 @@ const pageWrapper = {
   minHeight: '100vh', display: 'flex',
   fontFamily: "'Inter', system-ui, sans-serif",
 };
-const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1 };
+const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1, transition: 'margin 0.3s' };
 const mobileMain = { ...mainContent, marginLeft: 0 };
 const card = {
   background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)',
