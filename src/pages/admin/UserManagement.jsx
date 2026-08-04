@@ -1,6 +1,3 @@
-**File 1: `src/pages/admin/UserManagement.jsx`** (updated with dynamic `marginLeft` and transition)
-
-```jsx
 import React, { useState, useEffect } from 'react';
 import {
   db, collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp,
@@ -307,4 +304,3 @@ export default function UserManagement() {
     </>
   );
 }
-```
