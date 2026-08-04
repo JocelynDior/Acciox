@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  db, auth, doc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot,
+  db, auth, doc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, setDoc,
 } from '../../firebase';
 import {
   updatePassword, updateEmail, reauthenticateWithCredential, EmailAuthProvider,
@@ -19,7 +19,7 @@ const pageWrapper = {
   minHeight: '100vh', display: 'flex',
   fontFamily: "'Inter', system-ui, sans-serif",
 };
-const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1 };
+const mainContent = { marginLeft: 260, paddingTop: 80, padding: '80px 24px 40px', flex: 1, transition: 'margin 0.3s' };
 const mobileMain = { ...mainContent, marginLeft: 0 };
 const card = {
   background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)',
