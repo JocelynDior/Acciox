@@ -42,8 +42,8 @@ const toggleContainer = {
 export default function AccountantSettings() {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [profile, setProfile] = useState({ fullName: '', email: '', accountantRole: '' }); // added accountantRole
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
+  const [profile, setProfile] = useState({ fullName: '', email: '', accountantRole: '' });
   const [pw, setPw] = useState({ current: '', new: '', confirm: '' });
   const [notifPrefs, setNotifPrefs] = useState({
     newTx: true, lowConfidence: true, syncErrors: true,
@@ -53,7 +53,7 @@ export default function AccountantSettings() {
   });
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -107,7 +107,7 @@ export default function AccountantSettings() {
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={isDesktop ? mainContent : mobileMain}>
           <h1 style={{ ...gradientTitle, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
             <FiSettings /> Settings
           </h1>
@@ -120,7 +120,6 @@ export default function AccountantSettings() {
               <div style={{ flex: 1 }}>
                 <input value={profile.fullName} onChange={e => setProfile(p => ({ ...p, fullName: e.target.value }))} style={inputStyle} placeholder="Full Name" />
                 <input value={profile.email} readOnly style={{ ...inputStyle, opacity: 0.6 }} placeholder="Email" />
-                {/* Accountant Role Dropdown */}
                 <select
                   value={profile.accountantRole}
                   onChange={e => setProfile(p => ({ ...p, accountantRole: e.target.value }))}
