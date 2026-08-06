@@ -39,13 +39,13 @@ export default function CompanyWorkspace() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [company, setCompany] = useState(null);
   const [recentTx, setRecentTx] = useState([]);
   const [allTx, setAllTx] = useState([]);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -101,7 +101,7 @@ export default function CompanyWorkspace() {
 
   const mainContent = {
     ...mainContentBase,
-    marginLeft: isMobile ? 0 : 260,
+    marginLeft: isDesktop ? 260 : 0,
   };
 
   return (
