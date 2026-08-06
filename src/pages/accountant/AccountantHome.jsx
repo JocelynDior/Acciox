@@ -36,7 +36,7 @@ export default function AccountantHome() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [companies, setCompanies] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [activities, setActivities] = useState([]);
@@ -44,7 +44,7 @@ export default function AccountantHome() {
   const [activeTab, setActiveTab] = useState('mine');
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -112,8 +112,8 @@ export default function AccountantHome() {
   });
 
   const mainContent = {
-    marginLeft: isMobile ? 0 : 260,
-    padding: isMobile ? '80px 16px 40px' : '80px 24px 40px',
+    marginLeft: isDesktop ? 260 : 0,
+    padding: isDesktop ? '80px 24px 40px' : '80px 16px 40px',
     flex: 1,
   };
 
