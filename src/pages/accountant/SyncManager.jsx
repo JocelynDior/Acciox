@@ -32,12 +32,12 @@ const gradientTitle = {
 export default function SyncManager() {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [syncLogs, setSyncLogs] = useState([]);
   const [syncStatus, setSyncStatus] = useState({ xero: false, qb: false, lastSync: null });
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -90,7 +90,7 @@ export default function SyncManager() {
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={isDesktop ? mainContent : mobileMain}>
           <h1 style={{ ...gradientTitle, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
             <FiRefreshCw /> Sync Manager
           </h1>
