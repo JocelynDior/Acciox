@@ -35,13 +35,13 @@ export default function PrivateChat() {
   const [newMsg, setNewMsg] = useState('');
   const [search, setSearch] = useState('');
   const [lastMessages, setLastMessages] = useState({});
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [showList, setShowList] = useState(true);
   const messagesEndRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -108,10 +108,10 @@ export default function PrivateChat() {
       <Navbar onMenuClick={() => setSidebarOpen(p => !p)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div style={{ ...chatLayout, marginLeft: isMobile ? 0 : 260 }}>
+        <div style={{ ...chatLayout, marginLeft: isDesktop ? 260 : 0 }}>
 
           {/* Contact List */}
-          {(!isMobile || showList) && (
+          {(!isDesktop || showList) && (
             <div style={contactList}>
               <div style={{ padding: 16, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 <h3 style={{ color: '#fff', margin: '0 0 12px' }}>Messages</h3>
@@ -156,13 +156,13 @@ export default function PrivateChat() {
           )}
 
           {/* Chat Area */}
-          {(!isMobile || !showList) && (
+          {(!isDesktop || !showList) && (
             <div style={mainChat}>
               {selectedContact ? (
                 <>
                   {/* Header */}
                   <div style={{ background: 'rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.15)', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                    {isMobile && (
+                    {isDesktop && (
                       <button onClick={() => setShowList(true)} style={{ background: 'none', border: 'none', color: '#e879f9', cursor: 'pointer', marginRight: 4 }}>
                         <FiArrowLeft size={20} />
                       </button>
