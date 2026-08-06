@@ -55,10 +55,10 @@ export default function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [usersCount, setUsersCount] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -102,7 +102,7 @@ export default function AdminHome() {
 
   const mainContent = {
     ...mainContentBase,
-    marginLeft: isMobile ? 0 : 260,
+    marginLeft: isDesktop ? 260 : 0,
   };
 
   return (
