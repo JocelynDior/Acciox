@@ -18,10 +18,10 @@ export default function ClientHome() {
   const { currentUser, companyId } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [transactions, setTransactions] = useState([]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -42,35 +42,31 @@ export default function ClientHome() {
   const revenue = monthlyTx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const expenses = monthlyTx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
   const net = revenue - expenses;
-  // pending variable removed, not used
 
-  // dynamic main content style
   const mainContent = {
-    marginLeft: isMobile ? 0 : 260,
-    padding: isMobile ? '80px 16px 40px' : '80px 24px 40px',
+    marginLeft: isDesktop ? 260 : 0,
+    padding: isDesktop ? '80px 24px 40px' : '80px 16px 40px',
     flex: 1,
   };
 
-  // grid: 4 cols desktop, 2 cols mobile
   const gridStyle = {
     display: 'grid',
-    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+    gridTemplateColumns: isDesktop ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)',
     gap: 16,
     marginBottom: 32,
   };
 
-  // card style with reduced padding on mobile
   const card = {
     background: 'rgba(255,255,255,0.08)',
     backdropFilter: 'blur(20px)',
     border: '1px solid rgba(255,255,255,0.15)',
     borderRadius: 16,
-    padding: isMobile ? 12 : 20,
+    padding: isDesktop ? 20 : 12,
     color: '#fff',
   };
 
   const h2Style = {
-    fontSize: isMobile ? '1.2rem' : '1.5rem',
+    fontSize: isDesktop ? '1.5rem' : '1.2rem',
     margin: '8px 0 4px',
   };
 
@@ -93,7 +89,7 @@ export default function ClientHome() {
           </div>
 
           <h3 style={{ color: '#fff', marginBottom: 16 }}>Recent Transactions</h3>
-          <div style={{ ...card, padding: isMobile ? 12 : 20 }}>
+          <div style={{ ...card, padding: isDesktop ? 20 : 12 }}>
             {monthlyTx.slice(0, 5).map(tx => (
               <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 <span>{tx.description}</span><span>R {parseFloat(tx.amount || 0).toFixed(2)}</span>
