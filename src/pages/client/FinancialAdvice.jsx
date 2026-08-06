@@ -32,17 +32,17 @@ const placeholderCards = [
 export default function FinancialAdvice() {
   const { currentUser, companyId } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const mainContent = {
-    marginLeft: isMobile ? 0 : 260,
-    padding: isMobile ? '80px 16px 40px' : '80px 24px 40px',
+    marginLeft: isDesktop ? 260 : 0,
+    padding: isDesktop ? '80px 24px 40px' : '80px 16px 40px',
     flex: 1,
   };
 
@@ -61,7 +61,7 @@ export default function FinancialAdvice() {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 16, marginBottom: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(2, 1fr)' : '1fr', gap: 16, marginBottom: 32 }}>
             {placeholderCards.map((item, i) => (
               <div key={i} style={card}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
