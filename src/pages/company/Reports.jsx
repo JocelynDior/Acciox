@@ -33,13 +33,13 @@ const tabStyle = (active) => ({
 export default function Reports() {
   const { companyId } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [activeTab, setActiveTab] = useState('pnl');
   const [transactions, setTransactions] = useState([]);
   const [aiInsight, setAiInsight] = useState(null);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -92,7 +92,7 @@ export default function Reports() {
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} companyId={companyId} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={isDesktop ? mainContent : mobileMain}>
           <h1 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: 24 }}>Financial Reports</h1>
           <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
             {['pnl', 'balance', 'cashflow'].map(tab => (
