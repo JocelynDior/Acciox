@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import { FiBriefcase, FiSearch, FiPlus, FiCheck, FiTrash2, FiEye, FiLink } from 'react-icons/fi';
-import { arrayUnion } from 'firebase/firestore'; // <-- added import
+import { arrayUnion } from 'firebase/firestore';
 
 const pageWrapper = {
   background: 'transparent',
@@ -43,23 +43,23 @@ export default function CompanyManagement() {
   const { currentUser } = useAuth();
   const [companies, setCompanies] = useState([]);
   const [clients, setClients] = useState([]);
-  const [accountants, setAccountants] = useState([]); // new state
+  const [accountants, setAccountants] = useState([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [modalOpen, setModalOpen] = useState(false);
   const [linkModal, setLinkModal] = useState({ show: false, company: null });
-  const [linkAccountantModal, setLinkAccountantModal] = useState({ show: false, company: null }); // new modal state
+  const [linkAccountantModal, setLinkAccountantModal] = useState({ show: false, company: null });
   const [selectedClientId, setSelectedClientId] = useState('');
-  const [selectedAccountantId, setSelectedAccountantId] = useState(''); // new state
+  const [selectedAccountantId, setSelectedAccountantId] = useState('');
   const [confirm, setConfirm] = useState({ show: false, type: '', company: null });
   const [form, setForm] = useState({
     companyName: '', ownerName: '', ownerEmail: '', industry: '', description: '',
   });
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -79,7 +79,6 @@ export default function CompanyManagement() {
     return () => unsub();
   }, []);
 
-  // Fetch all accountants
   useEffect(() => {
     const q = query(collection(db, 'users'), where('role', '==', 'accountant'));
     const unsub = onSnapshot(q, snap => {
@@ -163,8 +162,8 @@ export default function CompanyManagement() {
   };
 
   const mainContent = {
-    marginLeft: isMobile ? 0 : 260,
-    padding: isMobile ? '80px 16px 40px' : '80px 24px 40px',
+    marginLeft: isDesktop ? 260 : 0,
+    padding: isDesktop ? '80px 24px 40px' : '80px 16px 40px',
     flex: 1,
   };
 
@@ -229,7 +228,6 @@ export default function CompanyManagement() {
             ))
           )}
 
-          {/* Add Company Modal */}
           {modalOpen && (
             <div style={modalOverlay} onClick={() => setModalOpen(false)}>
               <div style={modalCard} onClick={e => e.stopPropagation()}>
@@ -246,7 +244,6 @@ export default function CompanyManagement() {
             </div>
           )}
 
-          {/* Link Client Modal */}
           {linkModal.show && (
             <div style={modalOverlay} onClick={() => setLinkModal({ show: false, company: null })}>
               <div style={modalCard} onClick={e => e.stopPropagation()}>
@@ -268,7 +265,6 @@ export default function CompanyManagement() {
             </div>
           )}
 
-          {/* Link Accountant Modal */}
           {linkAccountantModal.show && (
             <div style={modalOverlay} onClick={() => setLinkAccountantModal({ show: false, company: null })}>
               <div style={modalCard} onClick={e => e.stopPropagation()}>
@@ -290,7 +286,6 @@ export default function CompanyManagement() {
             </div>
           )}
 
-          {/* Confirm Dialog */}
           {confirm.show && (
             <div style={modalOverlay} onClick={() => setConfirm({ show: false })}>
               <div style={modalCard} onClick={e => e.stopPropagation()}>
