@@ -34,7 +34,7 @@ const inputStyle = { background:'rgba(255,255,255,0.07)', border:'1px solid rgba
 export default function InvoiceManager() {
   const { companyId } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [invoices, setInvoices] = useState([]);
   const [filterTab, setFilterTab] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
@@ -44,7 +44,7 @@ export default function InvoiceManager() {
   });
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -105,7 +105,7 @@ export default function InvoiceManager() {
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} companyId={companyId} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={isDesktop ? mainContent : mobileMain}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <h1 style={{ color: '#fff', fontSize: '1.8rem' }}>Invoice Manager</h1>
             <button onClick={() => setShowCreate(true)} style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 12, color: '#fff', padding: '12px 24px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}><FiPlus /> Create Invoice</button>
