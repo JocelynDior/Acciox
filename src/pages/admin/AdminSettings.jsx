@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  db, collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp,
+  db, auth, doc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, setDoc,
 } from '../../firebase';
+import {
+  updatePassword, updateEmail, reauthenticateWithCredential, EmailAuthProvider,
+} from 'firebase/auth';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
-  FiUsers, FiPlus, FiEdit, FiCheck, FiX, FiTrash2, FiSearch,
+  FiUser, FiLock, FiSettings, FiAlertTriangle, FiInfo, FiEdit, FiEye, FiEyeOff,
 } from 'react-icons/fi';
 
 // ---- Inline Styles ----
@@ -21,44 +24,49 @@ const mobileMain = { ...mainContent, marginLeft: 0 };
 const card = {
   background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)',
   WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.15)',
-  borderRadius: 16, padding: 20, color: '#fff',
+  borderRadius: 16, padding: 24, color: '#fff', marginBottom: 24,
 };
 const gradientTitle = {
   background: 'linear-gradient(to right, #c026d3, #e879f9)',
   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
   backgroundClip: 'text', fontWeight: 700,
 };
-const modalOverlay = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 2000,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-};
-const modalCard = {
-  background: 'rgba(20,10,40,0.95)', backdropFilter: 'blur(25px)',
-  border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20, padding: 30,
-  maxWidth: 500, width: '90%', color: '#fff', boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-};
 const inputStyle = {
-  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
-  borderRadius: 10, padding: '12px', color: '#fff', outline: 'none', fontSize: '0.95rem', marginBottom: 12,
+  width: '100%', padding: '12px', background: 'rgba(255,255,255,0.07)',
+  border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: '#fff',
+  outline: 'none', marginBottom: 12,
 };
-const selectStyle = {
-  ...inputStyle, appearance: 'none', cursor: 'pointer',
+const toggleContainer = {
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
 };
+const toggleSwitch = (active) => ({
+  width: 48, height: 26, borderRadius: 13, background: active ? '#c026d3' : 'rgba(255,255,255,0.2)',
+  position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
+  border: 'none', outline: 'none',
+});
+const toggleKnob = (active) => ({
+  position: 'absolute', top: 2, left: active ? 24 : 2,
+  width: 22, height: 22, borderRadius: '50%', background: '#fff',
+  transition: 'left 0.2s',
+});
 
-export default function UserManagement() {
+export default function AdminSettings() {
   const { currentUser } = useAuth();
-  const [users, setUsers] = useState([]);
-  const [search, setSearch] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, user: null });
-  const [form, setForm] = useState({
-    fullName: '', email: '', role: 'client', companyId: '', tempPassword: '',
+  const [profile, setProfile] = useState({ fullName: '', email: '' });
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [platformSettings, setPlatformSettings] = useState({
+    sessionTimeout: 30,
+    requireEmailVerification: true,
+    autoNotifyAdmin: true,
   });
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingPw, setLoadingPw] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth > 768);
@@ -66,97 +74,124 @@ export default function UserManagement() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Fetch current user data
   useEffect(() => {
-    const q = collection(db, 'users');
-    const unsub = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      setUsers(list);
+    if (!currentUser) return;
+    const unsub = onSnapshot(doc(db, 'users', currentUser.uid), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setProfile({ fullName: data.fullName || '', email: data.email || currentUser.email });
+      }
+    });
+    return () => unsub();
+  }, [currentUser]);
+
+  // Fetch platform settings (if exists)
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'platform'), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setPlatformSettings({
+          sessionTimeout: data.sessionTimeout || 30,
+          requireEmailVerification: data.requireEmailVerification !== false,
+          autoNotifyAdmin: data.autoNotifyAdmin !== false,
+        });
+      }
     });
     return () => unsub();
   }, []);
 
-  const logAudit = async (action, targetUser) => {
+  const logAudit = async (action) => {
     try {
       await addDoc(collection(db, 'auditLogs'), {
         action,
-        targetUser: targetUser?.email || targetUser,
         performedBy: currentUser?.email || 'admin',
         timestamp: serverTimestamp(),
       });
     } catch (e) { console.error('Audit log failed', e); }
   };
 
-  const stats = {
-    total: users.length,
-    accountants: users.filter(u => u.role === 'accountant').length,
-    clients: users.filter(u => u.role === 'client').length,
+  // Password strength indicator
+  const getStrength = (pwd) => {
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    if (score <= 2) return { label: 'Weak', color: '#ef4444' };
+    if (score === 3) return { label: 'Medium', color: '#f59e0b' };
+    return { label: 'Strong', color: '#22c55e' };
   };
+  const pwStrength = getStrength(newPw);
 
-  const filteredUsers = users.filter(u => {
-    const name = (u.fullName || '').toLowerCase();
-    const email = (u.email || '').toLowerCase();
-    const term = search.toLowerCase();
-    const matchSearch = name.includes(term) || email.includes(term);
-    const matchRole = filterRole === 'all' || u.role === filterRole;
-    const matchStatus = filterStatus === 'all' || u.status === filterStatus;
-    return matchSearch && matchRole && matchStatus;
-  });
-
-  const handleAddUser = async (e) => {
-    e.preventDefault();
-    if (!form.fullName || !form.email || !form.tempPassword) {
-      return toast.error('Name, email and password are required.');
+  // Calculate width percentage for password strength bar – using plain concatenation
+  const strengthWidth = (() => {
+    if (newPw.length >= 8) {
+      if (pwStrength.label === 'Strong') return 100;
+      if (pwStrength.label === 'Medium') return 66;
+      return 33;
     }
+    return 10;
+  })();
+
+  // Profile update
+  const handleProfileUpdate = async () => {
+    if (!profile.fullName.trim()) return toast.error('Name cannot be empty.');
+    setLoadingProfile(true);
     try {
-      await addDoc(collection(db, 'users'), {
-        fullName: form.fullName.trim(),
-        email: form.email.trim().toLowerCase(),
-        role: form.role,
-        status: 'unverified',
-        companyId: form.companyId || null,
-        createdAt: serverTimestamp(),
-      });
-      toast.success('User created successfully');
-      logAudit('ADD_USER', { email: form.email });
-      setAddModalOpen(false);
-      setForm({ fullName: '', email: '', role: 'client', companyId: '', tempPassword: '' });
+      await updateDoc(doc(db, 'users', currentUser.uid), { fullName: profile.fullName.trim() });
+      if (profile.email !== currentUser.email) {
+        const credential = EmailAuthProvider.credential(currentUser.email, currentPw);
+        await reauthenticateWithCredential(currentUser, credential);
+        await updateEmail(currentUser, profile.email.trim().toLowerCase());
+        await updateDoc(doc(db, 'users', currentUser.uid), { email: profile.email.trim().toLowerCase() });
+      }
+      toast.success('Profile updated');
+      logAudit('UPDATE_PROFILE');
     } catch (err) {
-      toast.error('Failed to add user: ' + err.message);
+      toast.error(err.message || 'Failed to update profile');
+    } finally { setLoadingProfile(false); }
+  };
+
+  // Change password
+  const handlePasswordChange = async () => {
+    if (!currentPw) return toast.error('Current password required.');
+    if (newPw !== confirmPw) return toast.error('Passwords do not match.');
+    if (pwStrength.label === 'Weak') return toast.error('Password too weak.');
+    setLoadingPw(true);
+    try {
+      const credential = EmailAuthProvider.credential(currentUser.email, currentPw);
+      await reauthenticateWithCredential(currentUser, credential);
+      await updatePassword(currentUser, newPw);
+      toast.success('Password updated');
+      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+      logAudit('CHANGE_PASSWORD');
+    } catch (err) {
+      toast.error(err.message || 'Failed to update password');
+    } finally { setLoadingPw(false); }
+  };
+
+  // Save platform settings
+  const handleSavePlatformSettings = async () => {
+    try {
+      await setDoc(doc(db, 'settings', 'platform'), platformSettings);
+      toast.success('Platform settings saved');
+      logAudit('UPDATE_PLATFORM_SETTINGS');
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
-  const handleUpdateRole = async (user, newRole) => {
-    if (user.id === currentUser?.uid) return toast.error('Cannot change your own role.');
-    try {
-      await updateDoc(doc(db, 'users', user.id), { role: newRole });
-      toast.success('Role updated');
-      logAudit('CHANGE_ROLE', user);
-      setEditUser(null);
-    } catch (err) { toast.error(err.message); }
+  // Danger zone actions
+  const handleExportData = () => {
+    toast('Data export will be available soon.', { icon: '🚧' });
+    logAudit('EXPORT_DATA_REQUEST');
   };
-
-  const handleToggleStatus = async (user, newStatus) => {
-    try {
-      await updateDoc(doc(db, 'users', user.id), { status: newStatus });
-      const msg = 'User ' + (newStatus === 'active' ? 'activated' : 'deactivated');
-      toast.success(msg);
-      logAudit(newStatus === 'active' ? 'ACTIVATE_USER' : 'DEACTIVATE_USER', user);
-    } catch (err) { toast.error(err.message); }
-  };
-
-  const handleDelete = async (user) => {
-    try {
-      await deleteDoc(doc(db, 'users', user.id));
-      toast.success('User deleted');
-      logAudit('DELETE_USER', user);
-      setDeleteConfirm({ show: false, user: null });
-    } catch (err) { toast.error(err.message); }
-  };
-
-  const roleBadgeColor = (role) => {
-    if (role === 'admin') return '#c026d3';
-    if (role === 'accountant') return '#7e22ce';
-    return '#3b82f6';
+  const handleClearAuditLogs = async () => {
+    if (!window.confirm('Delete all audit logs? This cannot be undone.')) return;
+    // Placeholder for clearing
+    toast.success('Audit logs cleared (simulated)');
+    logAudit('CLEAR_AUDIT_LOGS');
   };
 
   return (
@@ -165,140 +200,114 @@ export default function UserManagement() {
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main style={isDesktop ? mainContent : mobileMain}>
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-            <h1 style={{ ...gradientTitle, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <FiUsers /> User Management
-            </h1>
+          <h1 style={{ ...gradientTitle, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
+            <FiSettings /> Settings
+          </h1>
+
+          {/* Profile Section */}
+          <div style={card}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}><FiUser /> Profile</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16 }}>
+              <div style={{ position: 'relative', width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #7e22ce, #c026d3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 700, color: '#fff' }}>
+                {profile.fullName?.charAt(0)?.toUpperCase() || 'A'}
+                <div style={{ position: 'absolute', bottom: 0, right: 0, background: '#c026d3', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                  <FiEdit size={14} color="#fff" />
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>Full Name</label>
+                <input value={profile.fullName} onChange={e => setProfile(p => ({ ...p, fullName: e.target.value }))} style={inputStyle} />
+                <label style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>Email</label>
+                <input value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} style={inputStyle} />
+                <input type={showCurrentPw ? 'text' : 'password'} placeholder="Current password (to change email)" value={currentPw} onChange={e => setCurrentPw(e.target.value)} style={inputStyle} />
+              </div>
+            </div>
             <button
-              onClick={() => setAddModalOpen(true)}
-              style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 12, color: '#fff', padding: '12px 24px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 15px rgba(192,38,211,0.3)' }}
-            >
-              <FiPlus /> Add New User
-            </button>
+              onClick={handleProfileUpdate}
+              disabled={loadingProfile}
+              style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 12, padding: '12px 24px', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: loadingProfile ? 0.6 : 1 }}
+            >{loadingProfile ? 'Saving…' : 'Save Profile'}</button>
           </div>
 
-          {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
-            <div style={card}>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>Total Users</p>
-              <h2 style={{ margin: '4px 0' }}>{stats.total}</h2>
+          {/* Change Password */}
+          <div style={card}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}><FiLock /> Change Password</h2>
+            <div style={{ position: 'relative' }}>
+              <input type={showCurrentPw ? 'text' : 'password'} placeholder="Current Password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} style={inputStyle} />
+              <button onClick={() => setShowCurrentPw(!showCurrentPw)} style={{ position: 'absolute', right: 12, top: 10, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
+                {showCurrentPw ? <FiEyeOff /> : <FiEye />}
+              </button>
             </div>
-            <div style={card}>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>Accountants</p>
-              <h2 style={{ margin: '4px 0' }}>{stats.accountants}</h2>
+            <div style={{ position: 'relative' }}>
+              <input type={showNewPw ? 'text' : 'password'} placeholder="New Password" value={newPw} onChange={e => setNewPw(e.target.value)} style={inputStyle} />
+              <button onClick={() => setShowNewPw(!showNewPw)} style={{ position: 'absolute', right: 12, top: 10, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
+                {showNewPw ? <FiEyeOff /> : <FiEye />}
+              </button>
             </div>
-            <div style={card}>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>Clients</p>
-              <h2 style={{ margin: '4px 0' }}>{stats.clients}</h2>
+            {newPw && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ height: 6, borderRadius: 3, background: pwStrength.color, width: strengthWidth + '%', transition: 'width 0.3s' }} />
+                <small style={{ color: pwStrength.color }}>{pwStrength.label}</small>
+              </div>
+            )}
+            <input type="password" placeholder="Confirm New Password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} style={inputStyle} />
+            <button
+              onClick={handlePasswordChange}
+              disabled={loadingPw}
+              style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 12, padding: '12px 24px', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: loadingPw ? 0.6 : 1 }}
+            >{loadingPw ? 'Updating…' : 'Update Password'}</button>
+          </div>
+
+          {/* Platform Settings */}
+          <div style={card}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}><FiSettings /> Platform Settings</h2>
+            <div style={toggleContainer}>
+              <span>Session timeout (minutes)</span>
+              <select value={platformSettings.sessionTimeout} onChange={e => setPlatformSettings(p => ({ ...p, sessionTimeout: Number(e.target.value) }))} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, color: '#fff', padding: '8px 12px' }}>
+                <option value={15}>15</option>
+                <option value={30}>30</option>
+                <option value={60}>60</option>
+              </select>
+            </div>
+            <div style={toggleContainer}>
+              <span>Require email verification</span>
+              <button style={toggleSwitch(platformSettings.requireEmailVerification)} onClick={() => setPlatformSettings(p => ({ ...p, requireEmailVerification: !p.requireEmailVerification }))}>
+                <span style={toggleKnob(platformSettings.requireEmailVerification)} />
+              </button>
+            </div>
+            <div style={toggleContainer}>
+              <span>Auto-notify on new registration</span>
+              <button style={toggleSwitch(platformSettings.autoNotifyAdmin)} onClick={() => setPlatformSettings(p => ({ ...p, autoNotifyAdmin: !p.autoNotifyAdmin }))}>
+                <span style={toggleKnob(platformSettings.autoNotifyAdmin)} />
+              </button>
+            </div>
+            <button
+              onClick={handleSavePlatformSettings}
+              style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 12, padding: '12px 24px', color: '#fff', fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
+            >Save Settings</button>
+          </div>
+
+          {/* Danger Zone */}
+          <div style={{ ...card, borderColor: '#ef4444', border: '1px solid #ef4444' }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#ef4444' }}><FiAlertTriangle /> Danger Zone</h2>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <button onClick={handleExportData} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>Export All Data</button>
+              <button onClick={handleClearAuditLogs} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>Clear Audit Logs</button>
             </div>
           </div>
 
-          {/* Search & Filters */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.07)', borderRadius: 12, padding: '0 14px', flex: 1, minWidth: 200 }}>
-              <FiSearch color="rgba(255,255,255,0.5)" />
-              <input placeholder="Search by name or email" value={search} onChange={e => setSearch(e.target.value)} style={{ background: 'transparent', border: 'none', color: '#fff', padding: '12px 8px', outline: 'none', width: '100%' }} />
+          {/* About */}
+          <div style={card}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ ...gradientTitle, fontSize: '1.2rem' }}>Acciox</span>
+              <span style={{ color: 'rgba(255,255,255,0.6)' }}>v1.0</span>
             </div>
-            <select value={filterRole} onChange={e => setFilterRole(e.target.value)} style={selectStyle}>
-              <option value="all">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="accountant">Accountant</option>
-              <option value="client">Client</option>
-            </select>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="unverified">Unverified</option>
-              <option value="deactivated">Deactivated</option>
-            </select>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem' }}>AI-Powered Finance Platform</p>
+            <div style={{ marginTop: 8, display: 'flex', gap: 16 }}>
+              <a href="/terms" style={{ color: '#e879f9' }}>Terms</a>
+              <a href="/privacy" style={{ color: '#e879f9' }}>Privacy</a>
+            </div>
           </div>
-
-          {/* User List */}
-          {filteredUsers.length === 0 ? (
-            <div style={{ ...card, textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>No users found.</div>
-          ) : (
-            filteredUsers.map(user => (
-              <div key={user.id} style={{ ...card, marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #7e22ce, #c026d3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '1.2rem' }}>
-                    {user.fullName?.charAt(0).toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <strong>{user.fullName}</strong>
-                    <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>{user.email}</div>
-                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>Company: {user.companyName || 'N/A'}</div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, background: roleBadgeColor(user.role), color: '#fff' }}>{user.role}</span>
-                  <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, background: user.status === 'active' ? '#22c55e' : '#f59e0b', color: '#000' }}>{user.status}</span>
-                  <button onClick={() => setEditUser(user)} style={{ background: 'none', border: 'none', color: '#e879f9', cursor: 'pointer' }}><FiEdit /></button>
-                  {user.status !== 'active' && (
-                    <button onClick={() => handleToggleStatus(user, 'active')} style={{ background: 'none', border: 'none', color: '#22c55e', cursor: 'pointer' }}><FiCheck /></button>
-                  )}
-                  {user.status === 'active' && (
-                    <button onClick={() => handleToggleStatus(user, 'deactivated')} style={{ background: 'none', border: 'none', color: '#f59e0b', cursor: 'pointer' }}><FiX /></button>
-                  )}
-                  <button onClick={() => setDeleteConfirm({ show: true, user })} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><FiTrash2 /></button>
-                </div>
-              </div>
-            ))
-          )}
-
-          {/* Add User Modal */}
-          {addModalOpen && (
-            <div style={modalOverlay} onClick={() => setAddModalOpen(false)}>
-              <div style={modalCard} onClick={e => e.stopPropagation()}>
-                <h2 style={{ marginBottom: 20, ...gradientTitle, fontSize: '1.4rem' }}>Add New User</h2>
-                <form onSubmit={handleAddUser} style={{ display: 'flex', flexDirection: 'column' }}>
-                  <input placeholder="Full Name" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} style={inputStyle} />
-                  <input placeholder="Email" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} />
-                  <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} style={selectStyle}>
-                    <option value="client">Client</option>
-                    <option value="accountant">Accountant</option>
-                  </select>
-                  <input placeholder="Temporary Password" type="password" value={form.tempPassword} onChange={e => setForm(f => ({ ...f, tempPassword: e.target.value }))} style={inputStyle} />
-                  <button type="submit" style={{ background: 'linear-gradient(135deg, #7e22ce, #c026d3)', border: 'none', borderRadius: 12, padding: 14, color: '#fff', fontWeight: 600, cursor: 'pointer', marginTop: 10 }}>Create User</button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Edit Role Modal */}
-          {editUser && (
-            <div style={modalOverlay} onClick={() => setEditUser(null)}>
-              <div style={modalCard} onClick={e => e.stopPropagation()}>
-                <h3 style={{ marginBottom: 20 }}>Edit Role: {editUser.fullName}</h3>
-                <select
-                  defaultValue={editUser.role}
-                  onChange={(e) => handleUpdateRole(editUser, e.target.value)}
-                  style={{ ...selectStyle, width: '100%' }}
-                >
-                  <option value="admin">Admin</option>
-                  <option value="accountant">Accountant</option>
-                  <option value="client">Client</option>
-                </select>
-                <div style={{ marginTop: 20, textAlign: 'right' }}>
-                  <button onClick={() => setEditUser(null)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>Cancel</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Confirmation */}
-          {deleteConfirm.show && (
-            <div style={modalOverlay} onClick={() => setDeleteConfirm({ show: false })}>
-              <div style={modalCard} onClick={e => e.stopPropagation()}>
-                <h3 style={{ marginBottom: 12 }}>Delete User</h3>
-                <p>Are you sure you want to permanently delete {deleteConfirm.user?.fullName}?</p>
-                <div style={{ display: 'flex', gap: 12, marginTop: 20, justifyContent: 'flex-end' }}>
-                  <button onClick={() => setDeleteConfirm({ show: false })} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '10px 20px', color: '#fff', cursor: 'pointer' }}>Cancel</button>
-                  <button onClick={() => handleDelete(deleteConfirm.user)} style={{ background: '#ef4444', border: 'none', borderRadius: 10, padding: '10px 20px', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
-                </div>
-              </div>
-            </div>
-          )}
         </main>
       </div>
     </>
