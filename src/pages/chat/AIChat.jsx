@@ -25,11 +25,11 @@ export default function AIChat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -67,7 +67,7 @@ export default function AIChat() {
   };
 
   const mainStyle = {
-    marginLeft: isMobile ? 0 : 260,
+    marginLeft: isDesktop ? 260 : 0,
     display: 'flex', flexDirection: 'column', flex: 1, height: 'calc(100vh - 64px)', marginTop: 64,
   };
 
