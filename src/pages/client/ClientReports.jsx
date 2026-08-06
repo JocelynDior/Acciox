@@ -23,10 +23,10 @@ export default function ClientReports() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('pnl');
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -66,7 +66,7 @@ export default function ClientReports() {
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={isDesktop ? mainContent : mobileMain}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
             <h1 style={{ color: '#fff' }}>Financial Reports <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.1)', borderRadius: 20, padding: '2px 12px' }}>👁️ View Only</span></h1>
             <div style={{ display: 'flex', gap: 12 }}>
