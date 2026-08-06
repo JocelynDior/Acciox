@@ -25,18 +25,18 @@ export default function Reconciliation() {
   const { companyId } = useParams();
   const { userRole } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const isReadOnly = userRole === 'client';
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const mainContent = {
-    marginLeft: isMobile ? 0 : 260,
-    padding: isMobile ? '80px 16px 40px' : '80px 24px 40px',
+    marginLeft: isDesktop ? 260 : 0,
+    padding: isDesktop ? '80px 24px 40px' : '80px 16px 40px',
     flex: 1,
   };
 
