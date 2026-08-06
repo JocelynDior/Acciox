@@ -39,13 +39,13 @@ const tabStyle = (active) => ({
 export default function TransactionQueue() {
   const { currentUser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [transactions, setTransactions] = useState([]);
   const [filterTab, setFilterTab] = useState('all');
   const [loadingBatch, setLoadingBatch] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -134,7 +134,7 @@ export default function TransactionQueue() {
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={isDesktop ? mainContent : mobileMain}>
           <h1 style={{ ...gradientTitle, fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
             Transaction Review Queue
             {pendingCount > 0 && <span style={{ background: '#c026d3', borderRadius: 20, padding: '2px 12px', fontSize: '0.9rem', color: '#fff' }}>{pendingCount}</span>}
