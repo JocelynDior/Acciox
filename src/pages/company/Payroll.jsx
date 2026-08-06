@@ -27,14 +27,14 @@ const card = {
 export default function Payroll() {
   const { companyId } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
   const [staff, setStaff] = useState([]);
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [showRunPayroll, setShowRunPayroll] = useState(false);
   const [form, setForm] = useState({ name: '', position: '', salary: '', period: 'monthly', bankDetails: '', startDate: '' });
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -85,7 +85,7 @@ export default function Payroll() {
       <Navbar onMenuClick={() => setSidebarOpen(prev => !prev)} />
       <div style={pageWrapper}>
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} companyId={companyId} />
-        <main style={isMobile ? mobileMain : mainContent}>
+        <main style={isDesktop ? mainContent : mobileMain}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <h1 style={{ color: '#fff', fontSize: '1.8rem' }}>Payroll Management</h1>
             <div style={{ display: 'flex', gap: 12 }}>
