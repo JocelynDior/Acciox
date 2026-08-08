@@ -20,7 +20,7 @@ const UserManagement = lazy(() => import('./pages/admin/UserManagement'));
 
 // Accountant
 const AccountantHome = lazy(() => import('./pages/accountant/AccountantHome'));
-const AccountantSettings = lazy(() => import('./pages/accountant/AccountantSettings')); // new import
+const AccountantSettings = lazy(() => import('./pages/accountant/AccountantSettings'));
 const CompanyWorkspace = lazy(() => import('./pages/accountant/CompanyWorkspace'));
 const TransactionQueue = lazy(() => import('./pages/accountant/TransactionQueue'));
 const SyncManager = lazy(() => import('./pages/accountant/SyncManager'));
@@ -61,6 +61,24 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        {/* Global video background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            objectFit: 'cover',
+            zIndex: -1,
+            pointerEvents: 'none',
+          }}
+          src="https://res.cloudinary.com/doh9j5tvm/video/upload/v1786223764/b_Here_s_your_Seedance_qrxn7p.mp4"
+        />
         <Toaster position="top-right" />
         <Suspense fallback={<Loader />}>
           <Routes>
@@ -89,12 +107,12 @@ function App() {
             {/* Accountant / Agent */}
             <Route path="/accountant" element={<RoleGuard allowedRoles={['accountant', 'agent']}><AccountantHome /></RoleGuard>} />
             <Route path="/accountant/settings" element={<RoleGuard allowedRoles={['accountant', 'agent']}><AccountantSettings /></RoleGuard>} />
-            <Route path="/agent/settings" element={<RoleGuard allowedRoles={['accountant', 'agent']}><AccountantSettings /></RoleGuard>} /> {/* new route */}
+            <Route path="/agent/settings" element={<RoleGuard allowedRoles={['accountant', 'agent']}><AccountantSettings /></RoleGuard>} />
             <Route path="/accountant/company/:companyId" element={<RoleGuard allowedRoles={['accountant', 'agent']}><CompanyWorkspace /></RoleGuard>} />
             <Route path="/accountant/queue" element={<RoleGuard allowedRoles={['accountant', 'agent']}><TransactionQueue /></RoleGuard>} />
             <Route path="/accountant/sync" element={<RoleGuard allowedRoles={['accountant', 'agent']}><SyncManager /></RoleGuard>} />
 
-            {/* Company workspace - admin + accountant/agent + client (read only) */}
+            {/* Company workspace */}
             <Route path="/company/:companyId/dashboard" element={<RoleGuard allowedRoles={['admin', 'accountant', 'agent']}><CompanyDashboard /></RoleGuard>} />
             <Route path="/company/:companyId/transactions" element={<RoleGuard allowedRoles={['admin', 'accountant', 'agent']}><Transactions /></RoleGuard>} />
             <Route path="/company/:companyId/expenses" element={<RoleGuard allowedRoles={['admin', 'accountant', 'agent']}><StaffExpenses /></RoleGuard>} />
